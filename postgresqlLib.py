@@ -55,21 +55,8 @@ class database:
 
 	def execute(self, query, params = None):
 		""" Méthode pour exécuter une requête mais qui gère les drop de curseurs """
-		# try:
 		self.cursor.execute(query, params)
-		# except psycopg2.InterfaceError as e:
-		# 	print(e)
-		# 	self.cursor.rollback()
-		# 	try:
-		# 		self.cursor.execute(query, params)
-		# 	except psycopg2.InterfaceError as ee:
-		# 		print(ee)
 
-		# except psycopg2.OperationalError as f:
-		# 	print(f)
-		# 	self.close()
-		# 	self.open()
-		# 	self.cursor.execute(query, params)
 
 	def exec(self, query, params = None, fetch = "all"):
 		""" Méthode pour exécuter une requête et qui ouvre et ferme  la db automatiquement """
