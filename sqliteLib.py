@@ -2,7 +2,6 @@ import os, sys
 import sqlite3
 import time
 
-Test
 
 """ Utilitaires pour gérer une db sqlite """
 class sqliteDatabase:
