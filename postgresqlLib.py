@@ -3,7 +3,7 @@ import psycopg2						# DB postgresql
 """ Gestion de la base de données postgresql """
 
 
-class database:
+class postgresqlDatabase:
 	""" Classe pour la gestion de la DB """
 
 	def __init__(self, dbName, dbServer, dbPort, dbUser, dbPassword, GUI=False):
