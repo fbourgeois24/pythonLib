@@ -6,7 +6,7 @@ import psycopg2						# DB postgresql
 class postgresqlDatabase:
 	""" Classe pour la gestion de la DB """
 
-	def __init__(self, dbName, dbServer, dbPort, dbUser, dbPassword, GUI=False):
+	def __init__(self, dbName, dbServer, dbPort, dbUser, dbPassword, GUI=False, sslmode="allow", options = ""):
 		self.db = None
 		self.cursor = None
 		self.database = dbName
@@ -15,11 +15,13 @@ class postgresqlDatabase:
 		self.user = dbUser
 		self.password = dbPassword
 		self.GUI = GUI
+		self.sslmode = sslmode # Valeurs possibles : disable, allow, prefer, require, verify-ca, verify-full
+		self.options = options # Chercher dans un schéma particulier : options="-c search_path=dbo,public")
 
 
 	def connect(self):
 		""" Méthode pour se connecter à la base de données """
-		self.db = psycopg2.connect(host = self.host, port = self.port, database = self.database, user = self.user, password = self.password)
+		self.db = psycopg2.connect(host = self.host, port = self.port, database = self.database, user = self.user, password = self.password, sslmode = self.sslmode, options = self.options)
 		if self.db is None:
 			return False
 		else:
@@ -37,6 +39,10 @@ class postgresqlDatabase:
 		except:
 			pass
 		self.cursor = self.db.cursor()
+		if self.cursor is not None:
+			return True
+		else:
+			return False
 
 
 	def commit(self):
@@ -74,7 +80,7 @@ class postgresqlDatabase:
 			elif fetch == "one":
 				value = self.fetchone()
 			else:
-				raise fetchError("Wrong fetch type")
+				raise ValueError("Wrong fetch type")
 			self.close()
 			return value
 		else:
