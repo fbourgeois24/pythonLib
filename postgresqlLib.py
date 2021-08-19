@@ -31,6 +31,10 @@ class postgresqlDatabase:
 		""" Méthode pour déconnecter la db """
 		self.db.close()
 
+	def disconnect(self):
+		""" Méthode pour déconnecter la db """
+		self.db.close()
+
 	def open(self):
 		""" Méthode pour créer un curseur """
 		# On essaye de fermer le curseur avant d'en recréer un 
