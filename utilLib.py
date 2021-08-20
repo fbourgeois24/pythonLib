@@ -7,6 +7,7 @@
 import time
 import os, sys
 import datetime
+import yaml
 
 
 class timer:
@@ -71,6 +72,31 @@ def log(msg, output=""):
 		logFile.close()
 	else:
 		print(str(datetime.datetime.now()) + " -> " + str(msg))
+
+
+class yaml_parametres():
+	""" Gestion des paramètres """
+	def __init__(self, path):
+		self.path = path
+
+	def read(self):
+		""" Lire les paramètres et les stocker dans un dictionnaire """
+		try:	
+			yaml_file = open(self.path, "r")
+		except FileNotFoundError:
+			return {}
+		except Exception as e:
+			print(f"Exception non gérée à la lecture des paramètres : {e}")
+		else:	
+			dict_parameters = yaml.load(yaml_file, Loader=yaml.FullLoader)
+			yaml_file.close()
+			return dict_parameters
+
+	def write(self, dict_parameters):
+		""" Ecrire les paramètres dans le fichier yaml """
+		yaml_file = open(self.path, "w")
+		yaml.dump(dict_parameters, yaml_file)
+		yaml_file.close()
 
 
 
