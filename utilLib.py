@@ -77,6 +77,7 @@ def log(msg, output=""):
 class yaml_parametres():
 	""" Gestion des paramètres dans un fichier yaml externe
 		Lors de l'initialisation de la fonction, read permet de directement lire les valeurs qui seront stockées dans self.content
+		Dans ce cas les valeurs ne sont évidemment pas renvoyés sous forme de dictionnaire !
 	 """
 	def __init__(self, path, read=False):
 		self.path = path
