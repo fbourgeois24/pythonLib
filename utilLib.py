@@ -75,27 +75,42 @@ def log(msg, output=""):
 
 
 class yaml_parametres():
-	""" Gestion des paramètres """
-	def __init__(self, path):
+	""" Gestion des paramètres dans un fichier yaml externe
+		Lors de l'initialisation de la fonction, read permet de directement lire les valeurs qui seront stockées dans self.content
+	 """
+	def __init__(self, path, read=False):
 		self.path = path
+		self.content = {}
+		if read:
+			self.content = self.read()
 
 	def read(self):
-		""" Lire les paramètres et les stocker dans un dictionnaire """
+		""" Lire les paramètres et les stocker dans un dictionnaire
+			Lors de l'exécution de cette fonction, les paramètres sont stockés dans self.content et sont renvoyés
+		 """
 		try:	
 			yaml_file = open(self.path, "r")
 		except FileNotFoundError:
-			return {}
+			dict_parameters = {}
 		except Exception as e:
 			print(f"Exception non gérée à la lecture des paramètres : {e}")
+			return
 		else:	
 			dict_parameters = yaml.load(yaml_file, Loader=yaml.FullLoader)
 			yaml_file.close()
-			return dict_parameters
+		self.content = dict_parameters
+		return dict_parameters
 
-	def write(self, dict_parameters):
-		""" Ecrire les paramètres dans le fichier yaml """
+	def write(self, dict_parameters=None):
+		""" Ecrire les paramètres dans le fichier yaml 
+			Sauve les paramètres stockés.
+			Si un dictionnaire est passé en paramètre, c'est lui qui est stocké sinon ce sera self.content qui sera stocké
+		"""
 		yaml_file = open(self.path, "w")
-		yaml.dump(dict_parameters, yaml_file)
+		if dict_parameters is not None:
+			yaml.dump(dict_parameters, yaml_file)
+		else:
+			yaml.dump(self.content, yaml_file)
 		yaml_file.close()
 
 
