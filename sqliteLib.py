@@ -1,5 +1,12 @@
 import os, sys
-import sqlite3
+
+try:
+	import sqlite3
+except ModuleNotFoundError:
+	# Installation des dépendances
+	os.popen("pip install db-sqlite3").read()
+	import sqlite3
+
 import time
 
 

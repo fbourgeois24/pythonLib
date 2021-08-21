@@ -7,7 +7,15 @@
 import time
 import os, sys
 import datetime
-import yaml
+
+try:
+	import yaml
+except ModuleNotFoundError:
+	# Installation des dépendances
+	os.popen("pip install PyYAML").read()
+	import yaml
+
+import socket
 
 
 class timer:
@@ -118,6 +126,11 @@ class yaml_parametres():
 def get_ip():
 	""" Récupérer l'ip de la carte ethernet de la machine"""
 	return str(os.popen('ifconfig').read().split("eth0")[1].split('inet')[1].split('netmask')[0].replace(" ",""))
+
+
+def get_hostname():
+	""" Récupérer le nom de la machine """
+	return str(socket.gethostname())
 
 
 

@@ -1,4 +1,11 @@
-import psycopg2						# DB postgresql
+import os
+
+try:
+	import psycopg2
+except ModuleNotFoundError:
+	# Installation des dépendances
+	os.popen("pip install psycopg2-binary").read()
+	import psycopg2	# DB postgresql
 
 """ Gestion de la base de données postgresql """
 
