@@ -217,26 +217,26 @@ class window:
 	# 	return object.get()
 
 
-	def showAsTable(self,data=None,ajoutFn=None,editFn=None,supprFn=None):
+	def showAsTable(self,data=None,ajout=True, edit=True,editFn=None,supprFn=None):
 		""" Méthode pour afficher une liste comme tableau
+		La scrollbar de la fenêtre doit être désactivée
 		data contient les infos à afficher (liste sur 2 niveaux pour lignes et colonnes)
-		select définit si la ligne du tableau doit-être sélectionnable (puce de sélection devant la ligne)"""
+			Dans les colonnes, la permière ne sera pas affichée et servira de valeur renvoyée à la sélection d'une ligne
+		editFn : Fonction déclenchée par le bouton "Ajout" ou "Modification" appelle la fonction passée avec les paramètres 
+			- id=0 et create=True si ajout (paramètre ajout=True)
+			- id=id de la ligne sélectionnée et create = False si modification(paramètre edit=True)
+		supprFn : Fonction déclenchée par le bouton "Supprimer", appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
+		"""
 
 
 		def fixed_map(option):
-		    # Fix for setting text colour for Tkinter 8.6.9
-		    # From: https://core.tcl.tk/tk/info/509cafafae
-		    #
-		    # Returns the style map for 'option' with any styles starting with
-		    # ('!disabled', '!selected', ...) filtered out.
-
-		    # style.map() returns an empty list for missing options, so this
-		    # should be future-safe.
+		    """ Fonction pour résoudre un bug dans l'affichage des lignes colorées """
 		    return [elm for elm in style.map('Treeview', query_opt=option) if
 		        elm[:2] != ('!disabled', '!selected')]
 
-		# Vérifier si une ligne a bien été sélectionnée si bouton editer ou supprimer
+	
 		def actionSelected(suppr=False, create=False):
+			""" Vérifier si une ligne a bien été sélectionnée si bouton editer ou supprimer """
 			# Si suppr ou create = False on vérifie si une ligne a bien été sélectionnée
 			if (suppr or ((not suppr) and not create)) and tableau.focus() == "":
 				# Le message est adapté suivant le type d'action (de bouton pressé)
@@ -251,7 +251,6 @@ class window:
 			# Si suppression
 			if suppr:
 				supprFn(id=tableau.focus())
-				
 			# Si création
 			elif create:
 				editFn(id=0, create=True)
@@ -284,13 +283,13 @@ class window:
 
 		# Ajout des boutons, on active seulement les boutons pour lesquels une fonction a été fournie
 		if editFn != None:
-			Button(frameBoutons, text="Ajouter", command=lambda: actionSelected(create=True)).pack(side=LEFT, padx=10, pady=10)
-			Button(frameBoutons, text="Editer", command=lambda: actionSelected(create=False)).pack(side=LEFT, padx=10, pady=10)
+			if ajout:
+				Button(frameBoutons, text="Ajouter", command=lambda: actionSelected(create=True)).pack(side=LEFT, padx=10, pady=10)
+			if edit:
+				Button(frameBoutons, text="Editer", command=lambda: actionSelected(create=False)).pack(side=LEFT, padx=10, pady=10)
 		if supprFn != None:
 			Button(frameBoutons, text="Supprimer", command=lambda: actionSelected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
 
-		# Désactivation de la barre de défilement de la fenêtre
-		self.scrollbarActivate = False
 
 		# Création de la barre de défilement pour le tableau
 		scrollbarTableau = Scrollbar(frameTableau)
