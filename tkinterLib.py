@@ -217,9 +217,10 @@ class window:
 	# 	return object.get()
 
 
-	def showAsTable(self,data=None,ajout=True, edit=True,editFn=None,supprFn=None):
+	def showAsTable(self,titles,data,ajout=True, edit=True,editFn=None,supprFn=None):
 		""" Méthode pour afficher une liste comme tableau
 		La scrollbar de la fenêtre doit être désactivée
+		titles est une liste qui contient les titres des colonnes
 		data contient les infos à afficher (liste sur 2 niveaux pour lignes et colonnes)
 			Dans les colonnes, la permière ne sera pas affichée et servira de valeur renvoyée à la sélection d'une ligne
 		editFn : Fonction déclenchée par le bouton "Ajout" ou "Modification" appelle la fonction passée avec les paramètres 
@@ -301,8 +302,8 @@ class window:
 		
 
 		# Attribution du titre à la colonne
-		for item in data[0]:
-			tableau.heading(item, text=item)
+		for id, item in enumerate(titles):
+			tableau.heading(id, text=item)
 		# On masque la colonne "text" qui apparait à gauche
 		tableau['show'] = 'headings'
 
@@ -311,11 +312,11 @@ class window:
 		
 
 		# On insère dans le tableau toutes les lignes suivantes contenues dans la liste
-		for item in data[1:]:
+		for id, item in enumerate(data):
 			# tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=('ligneCouleur',))
 
 			# Si c'est une ligne impaire, on la colorie
-			if data[1:].index(item) % 2 != 0:
+			if id % 2 != 0:
 				tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneCouleur",))
 			else:
 				tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneBlanche",))
