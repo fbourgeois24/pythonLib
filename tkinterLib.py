@@ -276,7 +276,7 @@ class window:
 		
 		# Création d'une frame pour y mettre le tableau
 		frameTableau = Frame(self.scrlFrame)
-		frameTableau.pack(pady=10)
+		frameTableau.pack(pady=10, expand=YES, fill=BOTH)
 
 		# Création d'une frame pour mettre les boutons au dessus du tableau
 		frameBoutons = Frame(frameTableau)
@@ -297,25 +297,26 @@ class window:
 		scrollbarTableau.pack(side=RIGHT,fill=Y)
 
 		# Création du tableau et définition des colonnes (le nom de la colonne = le titre de la colonne)
-		tableau = Treeview(frameTableau, yscrollcommand=scrollbarTableau.set, selectmode='extended', columns=(data[0]))
+		tableau = Treeview(frameTableau, yscrollcommand=scrollbarTableau.set, selectmode='extended', columns=(titles))
+		# Spécification des colonnes
+		for item in titles:
+			tableau.column(item, anchor=CENTER)
 		scrollbarTableau.config(command=tableau.yview)
 		
 
 		# Attribution du titre à la colonne
 		for id, item in enumerate(titles):
-			tableau.heading(id, text=item)
+			tableau.heading(id, text=item, anchor=CENTER)
 		# On masque la colonne "text" qui apparait à gauche
 		tableau['show'] = 'headings'
 
-		tableau.pack(padx = 10, pady = (0, 10))
+		tableau.pack(pady = (0, 10), expand=YES, fill=BOTH)
 
 		
 
 		# On insère dans le tableau toutes les lignes suivantes contenues dans la liste
 		for id, item in enumerate(data):
-			# tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=('ligneCouleur',))
-
-			# Si c'est une ligne impaire, on la colorie
+ 			# Si c'est une ligne impaire, on la colorie
 			if id % 2 != 0:
 				tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneCouleur",))
 			else:
