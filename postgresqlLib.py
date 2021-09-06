@@ -85,7 +85,7 @@ class postgresqlDatabase:
 		self.open()
 		self.cursor.execute(query, params)
 		# Si pas de commit ce sera une récupération
-		if not commit:	
+		if not commit or "RETURNING" in query:	
 			if fetch == "all":
 				value = self.fetchall()
 			elif fetch == "one":

@@ -217,12 +217,13 @@ class window:
 	# 	return object.get()
 
 
-	def showAsTable(self,titles,data,ajout=True, edit=True,editFn=None,supprFn=None):
+	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None):
 		""" Méthode pour afficher une liste comme tableau
 		La scrollbar de la fenêtre doit être désactivée
 		titles est une liste qui contient les titres des colonnes
 		data contient les infos à afficher (liste sur 2 niveaux pour lignes et colonnes)
 			Dans les colonnes, la permière ne sera pas affichée et servira de valeur renvoyée à la sélection d'une ligne
+		selectFn : Fonction appelée par le bouton "Sélectionner". Appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
 		editFn : Fonction déclenchée par le bouton "Ajout" ou "Modification" appelle la fonction passée avec les paramètres 
 			- id=0 et create=True si ajout (paramètre ajout=True)
 			- id=id de la ligne sélectionnée et create = False si modification(paramètre edit=True)
@@ -236,21 +237,26 @@ class window:
 		        elm[:2] != ('!disabled', '!selected')]
 
 	
-		def actionSelected(suppr=False, create=False):
+		def actionSelected(suppr=False, create=False, select=False):
 			""" Vérifier si une ligne a bien été sélectionnée si bouton editer ou supprimer """
 			# Si suppr ou create = False on vérifie si une ligne a bien été sélectionnée
 			if (suppr or ((not suppr) and not create)) and tableau.focus() == "":
 				# Le message est adapté suivant le type d'action (de bouton pressé)
-				if not suppr:
+				if (not suppr) and not select:
 					action = "modifier"
+				elif not suppr:
+					action = "sélectionner"
 				else:
 					action = "supprimer"
-				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action)
+				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=frameTableau)
 				return
 	
 			
+			# Si sélection
+			if select:
+				selectFn(id=tableau.focus())
 			# Si suppression
-			if suppr:
+			elif suppr:
 				supprFn(id=tableau.focus())
 			# Si création
 			elif create:
@@ -283,6 +289,8 @@ class window:
 		frameBoutons.pack(fill=X)
 
 		# Ajout des boutons, on active seulement les boutons pour lesquels une fonction a été fournie
+		if selectFn != None:
+			Button(frameBoutons, text="Sélectionner", command=lambda: actionSelected(select=True)).pack(side=LEFT, padx=10, pady=10)
 		if editFn != None:
 			if ajout:
 				Button(frameBoutons, text="Ajouter", command=lambda: actionSelected(create=True)).pack(side=LEFT, padx=10, pady=10)
@@ -293,15 +301,18 @@ class window:
 
 
 		# Création de la barre de défilement pour le tableau
-		scrollbarTableau = Scrollbar(frameTableau)
-		scrollbarTableau.pack(side=RIGHT,fill=Y)
+		scrollbarYTableau = Scrollbar(frameTableau)
+		scrollbarYTableau.pack(side=RIGHT,fill=Y)
+		scrollbarXTableau = Scrollbar(frameTableau, orient='horizontal')
+		scrollbarXTableau.pack(side=BOTTOM,fill=X)
 
 		# Création du tableau et définition des colonnes (le nom de la colonne = le titre de la colonne)
-		tableau = Treeview(frameTableau, yscrollcommand=scrollbarTableau.set, selectmode='extended', columns=(titles))
+		tableau = Treeview(frameTableau, yscrollcommand=scrollbarYTableau.set, xscrollcommand=scrollbarXTableau.set, selectmode='extended', columns=(titles))
 		# Spécification des colonnes
 		for item in titles:
 			tableau.column(item, anchor=CENTER)
-		scrollbarTableau.config(command=tableau.yview)
+		scrollbarYTableau.config(command=tableau.yview)
+		scrollbarXTableau.config(command=tableau.xview)
 		
 
 		# Attribution du titre à la colonne
