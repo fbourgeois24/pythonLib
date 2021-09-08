@@ -37,9 +37,7 @@ class window:
 		self.mainWindow = main
 		self.scrollbarActivate = scrollbar
 		self.menu = menu
-		self.function = function
-
-		
+		self.function = function		
 
 
 
@@ -179,7 +177,10 @@ class window:
 		else:
 			self.function(parameter)
 
-		
+	
+	def refresh(self):
+		""" Rafraichir la fenêtre sans la fermer """
+
 
 
 
@@ -228,7 +229,10 @@ class window:
 			- id=0 et create=True si ajout (paramètre ajout=True)
 			- id=id de la ligne sélectionnée et create = False si modification(paramètre edit=True)
 		supprFn : Fonction déclenchée par le bouton "Supprimer", appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
+
+		Pour mettre à jour le tableau, il suffit de rappeler la fonction, le précédent sera supprimé
 		"""
+
 
 
 		def fixed_map(option):
@@ -248,7 +252,7 @@ class window:
 					action = "sélectionner"
 				else:
 					action = "supprimer"
-				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=frameTableau)
+				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=self.frameTableau)
 				return
 	
 			
@@ -271,6 +275,14 @@ class window:
 			print("Aucune info à afficher !")
 			return
 
+		# Suppression d'un éventuel tableau déjà existant
+		try:
+			self.frameBoutons.destroy()
+			self.frameTableau.destroy()
+		except AttributeError:
+			pass
+
+
 
 		# Définition du style pour le tableau
 		style = Style()
@@ -281,33 +293,33 @@ class window:
 
 		
 		# Création d'une frame pour y mettre le tableau
-		frameTableau = Frame(self.scrlFrame)
-		frameTableau.pack(pady=10, expand=YES, fill=BOTH)
+		self.frameTableau = Frame(self.scrlFrame)
+		self.frameTableau.pack(pady=10, expand=YES, fill=BOTH)
 
 		# Création d'une frame pour mettre les boutons au dessus du tableau
-		frameBoutons = Frame(frameTableau)
-		frameBoutons.pack(fill=X)
+		self.frameBoutons = Frame(self.frameTableau)
+		self.frameBoutons.pack(fill=X)
 
 		# Ajout des boutons, on active seulement les boutons pour lesquels une fonction a été fournie
 		if selectFn != None:
-			Button(frameBoutons, text="Sélectionner", command=lambda: actionSelected(select=True)).pack(side=LEFT, padx=10, pady=10)
+			Button(self.frameBoutons, text="Sélectionner", command=lambda: actionSelected(select=True)).pack(side=LEFT, padx=10, pady=10)
 		if editFn != None:
 			if ajout:
-				Button(frameBoutons, text="Ajouter", command=lambda: actionSelected(create=True)).pack(side=LEFT, padx=10, pady=10)
+				Button(self.frameBoutons, text="Ajouter", command=lambda: actionSelected(create=True)).pack(side=LEFT, padx=10, pady=10)
 			if edit:
-				Button(frameBoutons, text="Editer", command=lambda: actionSelected(create=False)).pack(side=LEFT, padx=10, pady=10)
+				Button(self.frameBoutons, text="Editer", command=lambda: actionSelected(create=False)).pack(side=LEFT, padx=10, pady=10)
 		if supprFn != None:
-			Button(frameBoutons, text="Supprimer", command=lambda: actionSelected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
+			Button(self.frameBoutons, text="Supprimer", command=lambda: actionSelected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
 
 
 		# Création de la barre de défilement pour le tableau
-		scrollbarYTableau = Scrollbar(frameTableau)
+		scrollbarYTableau = Scrollbar(self.frameTableau)
 		scrollbarYTableau.pack(side=RIGHT,fill=Y)
-		scrollbarXTableau = Scrollbar(frameTableau, orient='horizontal')
+		scrollbarXTableau = Scrollbar(self.frameTableau, orient='horizontal')
 		scrollbarXTableau.pack(side=BOTTOM,fill=X)
 
 		# Création du tableau et définition des colonnes (le nom de la colonne = le titre de la colonne)
-		tableau = Treeview(frameTableau, yscrollcommand=scrollbarYTableau.set, xscrollcommand=scrollbarXTableau.set, selectmode='extended', columns=(titles))
+		tableau = Treeview(self.frameTableau, yscrollcommand=scrollbarYTableau.set, xscrollcommand=scrollbarXTableau.set, selectmode='extended', columns=(titles))
 		# Spécification des colonnes
 		for item in titles:
 			tableau.column(item, anchor=CENTER)
