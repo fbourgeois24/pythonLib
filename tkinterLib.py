@@ -37,7 +37,7 @@ class window:
 		self.mainWindow = main
 		self.scrollbarActivate = scrollbar
 		self.menu = menu
-		self.function = function		
+		self.function = function	
 
 
 
@@ -232,8 +232,7 @@ class window:
 
 		Pour mettre à jour le tableau, il suffit de rappeler la fonction, le précédent sera supprimé
 		"""
-
-
+		
 
 		def fixed_map(option):
 		    """ Fonction pour résoudre un bug dans l'affichage des lignes colorées """
@@ -327,9 +326,45 @@ class window:
 		scrollbarXTableau.config(command=tableau.xview)
 		
 
+		# Sera utilisé pour mémoriser le tri des colonnes
+		tableau.dict_sort = {}
+
+		def fn_sort(column):
+			""" Trier une colonne """
+			# On détecte si le nom de la colonne est le même qu'au tour précédent
+			if tableau.dict_sort.get(column) is not None:
+				# Si c'est le même on inverse juste le sens de tri de la colonne dans le dictionnaire
+				tableau.dict_sort[column] = not tableau.dict_sort[column]
+			else:
+				# Si ce n'est pas la même colonne 
+				# on supprime la flèche de la colonne précédente
+				# On vide le dictionnaire et on ajoute la nouvelle
+				if tableau.dict_sort != {}:
+					tableau.heading(column=tuple(tableau.dict_sort.keys())[0], text=tuple(tableau.dict_sort.keys())[0])
+				tableau.dict_sort.clear()
+				tableau.dict_sort[column] = False
+			# Lister les éléments de la colonne
+			try:
+				l = [(float(tableau.set(k, column)), k) for k in tableau.get_children()]
+			except ValueError:
+				l = [(tableau.set(k, column), k) for k in tableau.get_children()]
+			# Trier les éléments de la colonne
+			l.sort(key=lambda t: t[0], reverse=tableau.dict_sort[column])
+			# On déplace les lignes dans le tableau
+			for index, (_, k) in enumerate(l):
+				tableau.move(k, '', index)
+			# On change le titre pour indiquer le sens de tri
+			if tableau.dict_sort[column]:
+				tableau.heading(column=column, text=column + " ▼")
+			else:
+				tableau.heading(column=column, text=column + " ▲")
+
+
+
+
 		# Attribution du titre à la colonne
-		for id, item in enumerate(titles):
-			tableau.heading(id, text=item, anchor=CENTER)
+		for title in titles:
+			tableau.heading(column=title, text=title, anchor=CENTER, command=lambda _title = title: fn_sort(_title))
 		# On masque la colonne "text" qui apparait à gauche
 		tableau['show'] = 'headings'
 
