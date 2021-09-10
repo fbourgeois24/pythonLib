@@ -13,7 +13,7 @@ except ModuleNotFoundError:
 class postgresqlDatabase:
 	""" Classe pour la gestion de la DB """
 
-	def __init__(self, dbName, dbServer, dbPort, dbUser, dbPassword = "", GUI=False, sslmode="allow", options = ""):
+	def __init__(self, dbName, dbServer, dbPort="5432", dbUser="postgres", dbPassword = "", GUI=False, sslmode="allow", options = ""):
 		self.db = None
 		self.cursor = None
 		self.database = dbName
