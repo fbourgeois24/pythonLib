@@ -2,6 +2,7 @@ from tkinter import * # Pour l'interface graphique
 from tkinter.messagebox import * # Pour les messages popup
 from tkinter.filedialog import * # Pour la sélection d'un fichier
 from tkinter.ttk import * # Pour la création du tableau
+from tkinter import font
 
 
 #################################################################################################################################################################################
@@ -60,19 +61,6 @@ class window:
 				self.menuBar = Menu(self.w)
 				
 				# Boucle qui lit le dicttionnaire des menus et qui les génèrent
-				"""
-				Exemple de dictionnaire
-				dictMenu = [
-					{"nom":"Fichier","enfants":[
-						{"nom":"Sauvegarder","fonction":None, "raccourci":None},
-							{"nom":"_","fonction":None, "raccourci":None},
-						{"nom":"Quitter","fonction":lambda: sys.exit(0), "raccourci":"<Mod1-q>"},
-						]},
-					{"nom":"Gérer","enfants":[
-						{"nom":"Signaux","fonction":fnSignauxWindow, "raccourci":None},
-						]}]
-
-				"""
 				for item in self.menu:	
 					newMenu = Menu(self.menuBar, tearoff=0)
 					self.menuBar.add_cascade(label=item["nom"], menu = newMenu)
@@ -80,7 +68,7 @@ class window:
 						newMenu2 = Menu(self.menuBar, tearoff=0)
 						try:
 							# on teste si il y a des enfants, si oui c'est un sous menu
-							test = subItem1["enfants"]
+							subItem1["enfants"]
 						except:
 							# Elément de menu
 							if subItem1["nom"] == "_":
@@ -100,19 +88,6 @@ class window:
 									newMenu2.add_command(label=subItem2["nom"], command=subItem2["fonction"])
 									if subItem2["raccourci"] != None:
 										newMenu2.bind_all(subItem2["raccourci"], subItem2["fonction"])
-
-
-				# for item in self.menu:	
-				# 	newMenu = Menu(self.menuBar, tearoff=0)
-				# 	self.menuBar.add_cascade(label=item["nom"], menu = newMenu)
-				# 	for subItem in item["enfants"]:
-				# 		if subItem["nom"] == "_":
-				# 			newMenu.add_separator()
-				# 		else:
-				# 			newMenu.add_command(label=subItem["nom"], command=subItem["fonction"])
-				# 			if subItem["raccourci"] != None:
-				# 				newMenu.bind_all(subItem["raccourci"], subItem["fonction"])
-
 
 
 				
@@ -211,11 +186,6 @@ class window:
 		Label(self.dataSavedWindow, text="Les données ont bien été sauvegardées", font=("Helvetica, 30")).pack()
 		# self.dataSavedWindow.wx_attributes("-topmost", 1)
 		self.dataSavedWindow.after(1000, self.dataSavedWindow.destroy)
-
-
-	# def selectedLine(self, object):
-	# 	""" Renvoie la valeur de la ligne sélectionnée """
-	# 	return object.get()
 
 
 	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None):
@@ -340,7 +310,7 @@ class window:
 				# on supprime la flèche de la colonne précédente
 				# On vide le dictionnaire et on ajoute la nouvelle
 				if tableau.dict_sort != {}:
-					tableau.heading(column=tuple(tableau.dict_sort.keys())[0], text=tuple(tableau.dict_sort.keys())[0])
+					tableau.heading(column=tuple(tableau.dict_sort.keys())[0], text=tuple(tableau.dict_sort.keys())[0], strech=NO)
 				tableau.dict_sort.clear()
 				tableau.dict_sort[column] = False
 			# Lister les éléments de la colonne
@@ -383,4 +353,22 @@ class window:
 		# Configuration des tags pour la coloration d'une ligne sur 2
 		tableau.tag_configure('ligneCouleur', background='lightblue')
 		tableau.tag_configure('ligneBlanche', background='white')
+
+
+		# Autosize des colonnes
+		# Pour chaque colonne on définit l'élément le plus grand
+		dict_column_size = {}
+		for column in titles:
+			dict_column_size[column] = 0
+			for k in tableau.get_children():
+				taille_element = font.nametofont("TkDefaultFont").measure(tableau.set(k, column))
+				if taille_element > dict_column_size[column]:
+					dict_column_size[column] = taille_element
+		for column, size in dict_column_size.items():
+			column_size = round(font.nametofont("TkDefaultFont").measure(column) * 1.3)
+			if column_size > size:
+				size = column_size
+			tableau.column(column, width=size, stretch=False)
+	
+			
 
