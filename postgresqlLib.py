@@ -85,20 +85,22 @@ class postgresqlDatabase:
 			commit = True
 		else:
 			commit = False
-		self.open()
-		self.cursor.execute(query, params)
-		# Si pas de commit ce sera une récupération
-		if not commit or "RETURNING" in query:	
-			if fetch == "all":
-				value = self.fetchall()
-			elif fetch == "one":
-				value = self.fetchone()
+		if self.open():
+			self.cursor.execute(query, params)
+			# Si pas de commit ce sera une récupération
+			if not commit or "RETURNING" in query:	
+				if fetch == "all":
+					value = self.fetchall()
+				elif fetch == "one":
+					value = self.fetchone()
+				else:
+					raise ValueError("Wrong fetch type")
+				self.close()
+				return value
 			else:
-				raise ValueError("Wrong fetch type")
-			self.close()
-			return value
+				self.close(commit=commit)
 		else:
-			self.close(commit=commit)
+			raise AttributeError("Erreur de création du curseur pour l'accès à la db")
 
 
 	def fetchall(self):
