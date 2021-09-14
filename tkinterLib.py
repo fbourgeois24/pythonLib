@@ -31,14 +31,15 @@ class window:
 	""" Classe pour la gestion des fenêtres"""
 
 
-	def __init__(self, title, size, main = False, scrollbar = False, menu = None, function = None):
+	def __init__(self, title, size, main = False, scrollbar = False, menu = None, function = None, on_close_function=None):
 		""" Constructeur qui stocke le titre et la taille de la fenêtre"""
 		self.title = title
 		self.size = size
 		self.mainWindow = main
 		self.scrollbarActivate = scrollbar
 		self.menu = menu
-		self.function = function	
+		self.function = function
+		self.on_close_function = on_close_function # Fonction appelée à la fermeture de la fenêtre
 
 
 
@@ -56,6 +57,10 @@ class window:
 			else:
 				self.w.title(title)
 			self.w.geometry(self.size)
+
+			# Fonction appelée à la fermeture
+			self.w.protocol("WM_DELETE_WINDOW", self.on_close_function)
+
 			# Affichage du menu
 			if self.menu != None:
 				self.menuBar = Menu(self.w)
@@ -89,10 +94,9 @@ class window:
 									if subItem2["raccourci"] != None:
 										newMenu2.bind_all(subItem2["raccourci"], subItem2["fonction"])
 
-
-				
 				# On attache le menu à la fenêtre principale
 				self.w.config(menu = self.menuBar)
+
 			# Affichage de la barre de défilement
 			if self.scrollbarActivate:
 				self.vscrollbar = AutoScrollbar(self.w)
@@ -188,7 +192,7 @@ class window:
 		self.dataSavedWindow.after(1000, self.dataSavedWindow.destroy)
 
 
-	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None):
+	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None, filter=None):
 		""" Méthode pour afficher une liste comme tableau
 		La scrollbar de la fenêtre doit être désactivée
 		titles est une liste qui contient les titres des colonnes
