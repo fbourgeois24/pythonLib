@@ -133,8 +133,6 @@ def get_hostname():
 	return str(socket.gethostname())
 
 
-
-
-
-if __name__ == '__main__':
-	print(ping("1.1.1.1"))
+def get_username():
+	""" Récupérer le nom d'utilisteur courant de la machine """
+	return os.getlogin()
