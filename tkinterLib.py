@@ -310,7 +310,7 @@ class window:
 				# on supprime la flèche de la colonne précédente
 				# On vide le dictionnaire et on ajoute la nouvelle
 				if tableau.dict_sort != {}:
-					tableau.heading(column=tuple(tableau.dict_sort.keys())[0], text=tuple(tableau.dict_sort.keys())[0], strech=NO)
+					tableau.heading(column=tuple(tableau.dict_sort.keys())[0], text=tuple(tableau.dict_sort.keys())[0])
 				tableau.dict_sort.clear()
 				tableau.dict_sort[column] = False
 			# Lister les éléments de la colonne
