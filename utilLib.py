@@ -7,6 +7,7 @@
 import time
 import os, sys
 import datetime
+import platform
 
 try:
 	import yaml
@@ -136,3 +137,7 @@ def get_hostname():
 def get_username():
 	""" Récupérer le nom d'utilisteur courant de la machine """
 	return os.getlogin()
+
+def get_os():
+	""" Récupérer l'os sur lequel le script est exécuté """
+	return platform.system()

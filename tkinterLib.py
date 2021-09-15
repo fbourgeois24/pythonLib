@@ -3,6 +3,7 @@ from tkinter.messagebox import * # Pour les messages popup
 from tkinter.filedialog import * # Pour la sélection d'un fichier
 from tkinter.ttk import * # Pour la création du tableau
 from tkinter import font
+from pythonLib.utilLib import get_os
 
 
 #################################################################################################################################################################################
@@ -156,12 +157,6 @@ class window:
 		else:
 			self.function(parameter)
 
-	
-	def refresh(self):
-		""" Rafraichir la fenêtre sans la fermer """
-
-
-
 
 	def loop(self):
 		""" Méthode pour que la scrollbar fonctionne, à appeler en fin de fonction"""
@@ -192,7 +187,9 @@ class window:
 		self.dataSavedWindow.after(1000, self.dataSavedWindow.destroy)
 
 
-	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None, filter=None):
+
+
+	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None):
 		""" Méthode pour afficher une liste comme tableau
 		La scrollbar de la fenêtre doit être désactivée
 		titles est une liste qui contient les titres des colonnes
@@ -206,6 +203,10 @@ class window:
 
 		Pour mettre à jour le tableau, il suffit de rappeler la fonction, le précédent sera supprimé
 		"""
+		
+		# Mémorisation des titres et données pour si il faut appliquer un filtre par après
+		titles = titles
+		data = data
 		
 
 		def fixed_map(option):
@@ -292,71 +293,70 @@ class window:
 		scrollbarXTableau.pack(side=BOTTOM,fill=X)
 
 		# Création du tableau et définition des colonnes (le nom de la colonne = le titre de la colonne)
-		tableau = Treeview(self.frameTableau, yscrollcommand=scrollbarYTableau.set, xscrollcommand=scrollbarXTableau.set, selectmode='extended', columns=(titles))
+		self.tableau = Treeview(self.frameTableau, yscrollcommand=scrollbarYTableau.set, xscrollcommand=scrollbarXTableau.set, selectmode='extended', columns=(titles))
 		# Spécification des colonnes
 		for item in titles:
-			tableau.column(item, anchor=CENTER)
-		scrollbarYTableau.config(command=tableau.yview)
-		scrollbarXTableau.config(command=tableau.xview)
+			self.tableau.column(item, anchor=CENTER)
+		scrollbarYTableau.config(command=self.tableau.yview)
+		scrollbarXTableau.config(command=self.tableau.xview)
 		
 
 		# Sera utilisé pour mémoriser le tri des colonnes
-		tableau.dict_sort = {}
+		self.tableau.dict_sort = {}
 
 		def fn_sort(column):
 			""" Trier une colonne """
 			# On détecte si le nom de la colonne est le même qu'au tour précédent
-			if tableau.dict_sort.get(column) is not None:
+			if self.tableau.dict_sort.get(column) is not None:
 				# Si c'est le même on inverse juste le sens de tri de la colonne dans le dictionnaire
-				tableau.dict_sort[column] = not tableau.dict_sort[column]
+				self.tableau.dict_sort[column] = not self.tableau.dict_sort[column]
 			else:
 				# Si ce n'est pas la même colonne 
 				# on supprime la flèche de la colonne précédente
 				# On vide le dictionnaire et on ajoute la nouvelle
-				if tableau.dict_sort != {}:
-					tableau.heading(column=tuple(tableau.dict_sort.keys())[0], text=tuple(tableau.dict_sort.keys())[0])
-				tableau.dict_sort.clear()
-				tableau.dict_sort[column] = False
+				if self.tableau.dict_sort != {}:
+					self.tableau.heading(column=tuple(self.tableau.dict_sort.keys())[0], text=tuple(self.tableau.dict_sort.keys())[0])
+				self.tableau.dict_sort.clear()
+				self.tableau.dict_sort[column] = False
 			# Lister les éléments de la colonne
 			try:
-				l = [(float(tableau.set(k, column)), k) for k in tableau.get_children()]
+				l = [(float(self.tableau.set(k, column)), k) for k in self.tableau.get_children()]
 			except ValueError:
-				l = [(tableau.set(k, column), k) for k in tableau.get_children()]
+				l = [(self.tableau.set(k, column), k) for k in self.tableau.get_children()]
 			# Trier les éléments de la colonne
-			l.sort(key=lambda t: t[0], reverse=tableau.dict_sort[column])
+			l.sort(key=lambda t: t[0], reverse=self.tableau.dict_sort[column])
 			# On déplace les lignes dans le tableau
 			for index, (_, k) in enumerate(l):
-				tableau.move(k, '', index)
+				self.tableau.move(k, '', index)
 			# On change le titre pour indiquer le sens de tri
-			if tableau.dict_sort[column]:
-				tableau.heading(column=column, text=column + " ▼")
+			if self.tableau.dict_sort[column]:
+				self.tableau.heading(column=column, text=column + " ▼")
 			else:
-				tableau.heading(column=column, text=column + " ▲")
+				self.tableau.heading(column=column, text=column + " ▲")
 
 
 
 
 		# Attribution du titre à la colonne
 		for title in titles:
-			tableau.heading(column=title, text=title, anchor=CENTER, command=lambda _title = title: fn_sort(_title))
+			self.tableau.heading(column=title, text=title, anchor=CENTER, command=lambda _title = title: fn_sort(_title))
 		# On masque la colonne "text" qui apparait à gauche
-		tableau['show'] = 'headings'
+		self.tableau['show'] = 'headings'
 
-		tableau.pack(pady = (0, 10), expand=YES, fill=BOTH)
+		self.tableau.pack(pady = (0, 10), expand=YES, fill=BOTH)
 
-		
 
-		# On insère dans le tableau toutes les lignes suivantes contenues dans la liste
+		# Coloration d'une ligne sur 2
 		for id, item in enumerate(data):
  			# Si c'est une ligne impaire, on la colorie
 			if id % 2 != 0:
-				tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneCouleur",))
+				self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneCouleur",))
 			else:
-				tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneBlanche",))
+				self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneBlanche",))
 
 		# Configuration des tags pour la coloration d'une ligne sur 2
-		tableau.tag_configure('ligneCouleur', background='lightblue')
-		tableau.tag_configure('ligneBlanche', background='white')
+		self.tableau.tag_configure('ligneCouleur', background='lightblue')
+		self.tableau.tag_configure('ligneBlanche', background='white')
 
 
 		# Autosize des colonnes
@@ -364,15 +364,18 @@ class window:
 		dict_column_size = {}
 		for column in titles:
 			dict_column_size[column] = 0
-			for k in tableau.get_children():
-				taille_element = font.nametofont("TkDefaultFont").measure(tableau.set(k, column))
+			for k in self.tableau.get_children():
+				# Ajout d'un coef pour faire une marge
+				taille_element = font.nametofont("TkDefaultFont").measure(self.tableau.set(k, column)) + 30
 				if taille_element > dict_column_size[column]:
 					dict_column_size[column] = taille_element
+		# On configure la colonne en fonction des valeurs récupérées
 		for column, size in dict_column_size.items():
-			column_size = round(font.nametofont("TkDefaultFont").measure(column) * 1.3)
+			column_size = font.nametofont("TkDefaultFont").measure(column) + 20
+			# Si le titre de la colonne est plus large, on adapte la taille
 			if column_size > size:
 				size = column_size
-			tableau.column(column, width=size, stretch=False)
+			self.tableau.column(column, width=size, stretch=False)
 	
 			
 
