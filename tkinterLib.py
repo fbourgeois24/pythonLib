@@ -12,7 +12,7 @@ from pythonLib.utilLib import get_os
 
 
 ''' Barre de défilement'''
-class AutoScrollbar(Scrollbar):
+class auto_scrollbar(Scrollbar):
 	def set(self, lo, hi):
 		if float(lo) <= 0.0 and float(hi) >= 1.0:
 			# grid_remove is currently missing from Tkinter!
@@ -33,14 +33,17 @@ class window:
 
 
 	def __init__(self, title, size, main = False, scrollbar = False, menu = None, function = None, on_close_function=None):
-		""" Constructeur qui stocke le titre et la taille de la fenêtre"""
+		""" Constructeur qui stocke le titre et la taille de la fenêtre
+		function: fonction appelée à lé réouverture de la fenêtre (pour refresh)
+		on_close_function:  Fonction appelée à la fermeture de la fenêtre
+		"""
 		self.title = title
 		self.size = size
-		self.mainWindow = main
-		self.scrollbarActivate = scrollbar
+		self.is_main = main
+		self.scrollbar_activate = scrollbar
 		self.menu = menu
 		self.function = function
-		self.on_close_function = on_close_function # Fonction appelée à la fermeture de la fenêtre
+		self.on_close_function = on_close_function 
 
 
 
@@ -64,81 +67,81 @@ class window:
 
 			# Affichage du menu
 			if self.menu != None:
-				self.menuBar = Menu(self.w)
+				self.menu_bar = Menu(self.w)
 				
 				# Boucle qui lit le dicttionnaire des menus et qui les génèrent
 				for item in self.menu:	
-					newMenu = Menu(self.menuBar, tearoff=0)
-					self.menuBar.add_cascade(label=item["nom"], menu = newMenu)
-					for subItem1 in item["enfants"]:
-						newMenu2 = Menu(self.menuBar, tearoff=0)
+					new_menu = Menu(self.menu_bar, tearoff=0)
+					self.menu_bar.add_cascade(label=item["nom"], menu = new_menu)
+					for sub_item1 in item["enfants"]:
+						new_menu2 = Menu(self.menu_bar, tearoff=0)
 						try:
 							# on teste si il y a des enfants, si oui c'est un sous menu
-							subItem1["enfants"]
+							sub_item1["enfants"]
 						except:
 							# Elément de menu
-							if subItem1["nom"] == "_":
-								newMenu.add_separator()
+							if sub_item1["nom"] == "_":
+								new_menu.add_separator()
 							else:
-								newMenu.add_command(label=subItem1["nom"], command=subItem1["fonction"])
-								if subItem1["raccourci"] != None:
-									newMenu.bind_all(subItem1["raccourci"], subItem1["fonction"])
+								new_menu.add_command(label=sub_item1["nom"], command=sub_item1["fonction"])
+								if sub_item1["raccourci"] != None:
+									new_menu.bind_all(sub_item1["raccourci"], sub_item1["fonction"])
 						else:
 							# Sous-menu
-							newMenu2 = Menu(newMenu, tearoff=0)
-							newMenu.add_cascade(label=subItem1["nom"], menu = newMenu2)
-							for subItem2 in subItem1["enfants"]:
-								if subItem2["nom"] == "_":
-									newMenu2.add_separator()
+							new_menu2 = Menu(new_menu, tearoff=0)
+							new_menu.add_cascade(label=sub_item1["nom"], menu = new_menu2)
+							for sub_item2 in sub_item1["enfants"]:
+								if sub_item2["nom"] == "_":
+									new_menu2.add_separator()
 								else:
-									newMenu2.add_command(label=subItem2["nom"], command=subItem2["fonction"])
-									if subItem2["raccourci"] != None:
-										newMenu2.bind_all(subItem2["raccourci"], subItem2["fonction"])
+									new_menu2.add_command(label=sub_item2["nom"], command=sub_item2["fonction"])
+									if sub_item2["raccourci"] != None:
+										new_menu2.bind_all(sub_item2["raccourci"], sub_item2["fonction"])
 
 				# On attache le menu à la fenêtre principale
-				self.w.config(menu = self.menuBar)
+				self.w.config(menu = self.menu_bar)
 
 			# Affichage de la barre de défilement
-			if self.scrollbarActivate:
-				self.vscrollbar = AutoScrollbar(self.w)
-				self.vscrollbar.grid(row=0, column=1, sticky=N+S, rowspan=3)
-				self.hscrollbar = AutoScrollbar(self.w, orient=HORIZONTAL)
-				self.hscrollbar.grid(row=3, column=0, sticky=E+W)
-				self.upFixFrame = Frame(self.w)
-				self.upFixFrame.grid(row=0, column=0, sticky=E+W)
-				self.canvas = Canvas(self.w, yscrollcommand=self.vscrollbar.set, xscrollcommand=self.hscrollbar.set)
+			if self.scrollbar_activate:
+				self.v_scrollbar = auto_scrollbar(self.w)
+				self.v_scrollbar.grid(row=0, column=1, sticky=N+S, rowspan=3)
+				self.h_scrollbar = auto_scrollbar(self.w, orient=HORIZONTAL)
+				self.h_scrollbar.grid(row=3, column=0, sticky=E+W)
+				self.up_fix_frame = Frame(self.w)
+				self.up_fix_frame.grid(row=0, column=0, sticky=E+W)
+				self.canvas = Canvas(self.w, yscrollcommand=self.v_scrollbar.set, xscrollcommand=self.h_scrollbar.set)
 				self.canvas.grid(row=1, column=0, sticky=N+S+E+W)
-				self.dnFixFrame = Frame(self.w)
-				self.dnFixFrame.grid(row=2, column=0, sticky=E+W)
-				self.vscrollbar.config(command=self.canvas.yview)
-				self.hscrollbar.config(command=self.canvas.xview)
+				self.dn_fix_frame = Frame(self.w)
+				self.dn_fix_frame.grid(row=2, column=0, sticky=E+W)
+				self.v_scrollbar.config(command=self.canvas.yview)
+				self.h_scrollbar.config(command=self.canvas.xview)
 				self.w.grid_rowconfigure(1, weight=1)
 				self.w.grid_columnconfigure(0, weight=1)
-				self.scrlFrame = Frame(self.canvas)
-				self.scrlFrame.rowconfigure(1, weight=1)
-				self.scrlFrame.columnconfigure(1, weight=1)	
+				self.scrl_frame = Frame(self.canvas)
+				self.scrl_frame.rowconfigure(1, weight=1)
+				self.scrl_frame.columnconfigure(1, weight=1)	
 				self.canvas.bind_all("<MouseWheel>", self.onMouseWheel)
 			else:
-				self.upFixFrame = Frame(self.w)
-				self.upFixFrame.pack(fill="both")
-				self.scrlFrame = Frame(self.w)
-				self.scrlFrame.pack(fill="both", expand="yes")
-				self.dnFixFrame = Frame(self.w)
-				self.dnFixFrame.pack(fill="both")
+				self.up_fix_frame = Frame(self.w)
+				self.up_fix_frame.pack(fill="both")
+				self.scrl_frame = Frame(self.w)
+				self.scrl_frame.pack(fill="both", expand="yes")
+				self.dn_fix_frame = Frame(self.w)
+				self.dn_fix_frame.pack(fill="both")
 			return False
 
 	def close(self, ask = False, title = None, message = None):
 		""" Méthode qui ferme la fenêtre"""
 		if title != None or message != None or ask == True:
 			if title != None:
-				boxTitle = title
+				box_title = title
 			else:
-				boxTitle = "Fermer cette fenêtre ?"
+				box_title = "Fermer cette fenêtre ?"
 			if message != None:
-				boxMessage = message
+				box_message = message
 			else:
-				boxMessage = "Êtes vous sur de vouloir fermer cette fenêtre ?"
-			if not askyesno(boxTitle, boxMessage):
+				box_message = "Êtes vous sur de vouloir fermer cette fenêtre ?"
+			if not askyesno(box_title, box_message):
 				return
 		try:
 			self.w.destroy()
@@ -160,11 +163,11 @@ class window:
 
 	def loop(self):
 		""" Méthode pour que la scrollbar fonctionne, à appeler en fin de fonction"""
-		if self.scrollbarActivate:
-			self.canvas.create_window(0, 0, anchor=NW, window=self.scrlFrame)
-			self.scrlFrame.update_idletasks()
+		if self.scrollbar_activate:
+			self.canvas.create_window(0, 0, anchor=NW, window=self.scrl_frame)
+			self.scrl_frame.update_idletasks()
 			self.canvas.config(scrollregion=self.canvas.bbox("all"))
-		if self.mainWindow:
+		if self.is_main:
 			self.w.mainloop()
 
 
@@ -179,12 +182,12 @@ class window:
 
 	def dataSaved(self):
 		""" Affichage de la fenêtre de sauvegarde réussie """
-		self.dataSavedWindow = Toplevel()
-		self.dataSavedWindow.title("Données sauvegardées")
-		self.dataSavedWindow.geometry("550x50+250+300")
-		Label(self.dataSavedWindow, text="Les données ont bien été sauvegardées", font=("Helvetica, 30")).pack()
-		# self.dataSavedWindow.wx_attributes("-topmost", 1)
-		self.dataSavedWindow.after(1000, self.dataSavedWindow.destroy)
+		self.data_saved_window = Toplevel()
+		self.data_saved_window.title("Données sauvegardées")
+		self.data_saved_window.geometry("550x50+250+300")
+		Label(self.data_saved_window, text="Les données ont bien été sauvegardées", font=("Helvetica, 30")).pack()
+		# self.data_saved_window.wx_attributes("-topmost", 1)
+		self.data_saved_window.after(1000, self.data_saved_window.destroy)
 
 
 
@@ -215,10 +218,10 @@ class window:
 		        elm[:2] != ('!disabled', '!selected')]
 
 	
-		def actionSelected(suppr=False, create=False, select=False):
+		def action_selected(suppr=False, create=False, select=False):
 			""" Vérifier si une ligne a bien été sélectionnée si bouton editer ou supprimer """
 			# Si suppr ou create = False on vérifie si une ligne a bien été sélectionnée
-			if (suppr or ((not suppr) and not create)) and tableau.focus() == "":
+			if (suppr or ((not suppr) and not create)) and self.tableau.focus() == "":
 				# Le message est adapté suivant le type d'action (de bouton pressé)
 				if (not suppr) and not select:
 					action = "modifier"
@@ -226,7 +229,7 @@ class window:
 					action = "sélectionner"
 				else:
 					action = "supprimer"
-				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=self.frameTableau)
+				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=self.frame_tableau)
 				return
 	
 			
@@ -251,8 +254,8 @@ class window:
 
 		# Suppression d'un éventuel tableau déjà existant
 		try:
-			self.frameBoutons.destroy()
-			self.frameTableau.destroy()
+			self.frame_bouton.destroy()
+			self.frame_tableau.destroy()
 		except AttributeError:
 			pass
 
@@ -267,38 +270,38 @@ class window:
 
 		
 		# Création d'une frame pour y mettre le tableau
-		self.frameTableau = Frame(self.scrlFrame)
-		self.frameTableau.pack(pady=10, expand=YES, fill=BOTH)
+		self.frame_tableau = Frame(self.scrl_frame)
+		self.frame_tableau.pack(pady=10, expand=YES, fill=BOTH)
 
 		# Création d'une frame pour mettre les boutons au dessus du tableau
-		self.frameBoutons = Frame(self.frameTableau)
-		self.frameBoutons.pack(fill=X)
+		self.frame_boutons = Frame(self.frame_tableau)
+		self.frame_boutons.pack(fill=X)
 
 		# Ajout des boutons, on active seulement les boutons pour lesquels une fonction a été fournie
 		if selectFn != None:
-			Button(self.frameBoutons, text="Sélectionner", command=lambda: actionSelected(select=True)).pack(side=LEFT, padx=10, pady=10)
+			Button(self.frame_boutons, text="Sélectionner", command=lambda: action_selected(select=True)).pack(side=LEFT, padx=10, pady=10)
 		if editFn != None:
 			if ajout:
-				Button(self.frameBoutons, text="Ajouter", command=lambda: actionSelected(create=True)).pack(side=LEFT, padx=10, pady=10)
+				Button(self.frame_boutons, text="Ajouter", command=lambda: action_selected(create=True)).pack(side=LEFT, padx=10, pady=10)
 			if edit:
-				Button(self.frameBoutons, text="Editer", command=lambda: actionSelected(create=False)).pack(side=LEFT, padx=10, pady=10)
+				Button(self.frame_boutons, text="Editer", command=lambda: action_selected(create=False)).pack(side=LEFT, padx=10, pady=10)
 		if supprFn != None:
-			Button(self.frameBoutons, text="Supprimer", command=lambda: actionSelected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
+			Button(self.frame_boutons, text="Supprimer", command=lambda: action_selected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
 
 
 		# Création de la barre de défilement pour le tableau
-		scrollbarYTableau = Scrollbar(self.frameTableau)
-		scrollbarYTableau.pack(side=RIGHT,fill=Y)
-		scrollbarXTableau = Scrollbar(self.frameTableau, orient='horizontal')
-		scrollbarXTableau.pack(side=BOTTOM,fill=X)
+		scrollbar_Y_tableau = Scrollbar(self.frame_tableau)
+		scrollbar_Y_tableau.pack(side=RIGHT,fill=Y)
+		scrollbar_X_tableau = Scrollbar(self.frame_tableau, orient='horizontal')
+		scrollbar_X_tableau.pack(side=BOTTOM,fill=X)
 
 		# Création du tableau et définition des colonnes (le nom de la colonne = le titre de la colonne)
-		self.tableau = Treeview(self.frameTableau, yscrollcommand=scrollbarYTableau.set, xscrollcommand=scrollbarXTableau.set, selectmode='extended', columns=(titles))
+		self.tableau = Treeview(self.frame_tableau, yscrollcommand=scrollbar_Y_tableau.set, xscrollcommand=scrollbar_X_tableau.set, selectmode='extended', columns=(titles))
 		# Spécification des colonnes
 		for item in titles:
 			self.tableau.column(item, anchor=CENTER)
-		scrollbarYTableau.config(command=self.tableau.yview)
-		scrollbarXTableau.config(command=self.tableau.xview)
+		scrollbar_Y_tableau.config(command=self.tableau.yview)
+		scrollbar_X_tableau.config(command=self.tableau.xview)
 		
 
 		# Sera utilisé pour mémoriser le tri des colonnes

@@ -81,7 +81,7 @@ class postgresqlDatabase:
 	def exec(self, query, params = None, fetch = "all"):
 		""" Méthode pour exécuter une requête et qui ouvre et ferme  la db automatiquement """
 		# Détermination du commit
-		if not "SELECT" in query[:10]:
+		if not "SELECT" in query[:20]:
 			commit = True
 		else:
 			commit = False
