@@ -6,7 +6,7 @@
 
 import time
 import os, sys
-import datetime
+import datetime as dt
 import platform
 
 try:
@@ -77,10 +77,10 @@ def log(msg, output=""):
 		Si un nom est spécifé un fichier avec ce nom sera créé """
 	if output != "":
 		logFile = open(output, 'a')
-		print(str(datetime.datetime.now()) + " -> " + str(msg), file=logFile)
+		print(str(dt.datetime.now()) + " -> " + str(msg), file=logFile)
 		logFile.close()
 	else:
-		print(str(datetime.datetime.now()) + " -> " + str(msg))
+		print(str(dt.datetime.now()) + " -> " + str(msg))
 
 
 class yaml_parametres():
@@ -141,3 +141,20 @@ def get_username():
 def get_os():
 	""" Récupérer l'os sur lequel le script est exécuté """
 	return platform.system()
+
+
+def supervisor_status():
+	""" Affiche le statut du superviseur (renvoie un dictionnaire avec le nom du script comme clé et un autre dictionnaire contenenant les infos comme valeur) 
+	exemple de retour de la commande de statut du superviseur:
+	automate_telegram                RUNNING   pid 20523, uptime 1 day, 8:09:27
+	cpu_fan                          RUNNING   pid 20519, uptime 1 day, 8:09:27
+	gestion_signaux                  RUNNING   pid 20520, uptime 1 day, 8:09:27
+	"""
+
+	dict_scripts = {}
+	supervisor_status = os.popen("sudo supervisorctl status").read().split("\n")[:-1]
+	for script in supervisor_status:
+		# rstrip permet de supprimer les espaces à la fin de la chaine de caractère
+		dict_scripts[script[:33].rstrip()] = {"status": script[33:43].rstrip(), "pid": script[47:].split(",")[0], "uptime": dt.timedelta(days=int(script[61:].split("day, ")[0]),hours=int(script[61:].split("day,")[1].split(":")[0]) , minutes=int(script[61:].split("day,")[1].split(":")[2]), seconds=int(script[61:].split("day,")[1].split(":")[2]))}
+		
+	return dict_scripts
