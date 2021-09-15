@@ -328,6 +328,12 @@ class window:
 			# On déplace les lignes dans le tableau
 			for index, (_, k) in enumerate(l):
 				self.tableau.move(k, '', index)
+				if index % 2 == 0:
+					# Si c'est une ligne paire, c'est une ligne blanche
+					self.tableau.item(k, tags=("ligneBlanche",))
+				else:
+					# Si c'est une ligne impaire, c'est une ligne colorée
+					self.tableau.item(k, tags=("ligneCouleur",))
 			# On change le titre pour indiquer le sens de tri
 			if self.tableau.dict_sort[column]:
 				self.tableau.heading(column=column, text=column + " ▼")
