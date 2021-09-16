@@ -254,7 +254,7 @@ class window:
 
 		# Suppression d'un éventuel tableau déjà existant
 		try:
-			self.frame_bouton.destroy()
+			self.frame_boutons.destroy()
 			self.frame_tableau.destroy()
 		except AttributeError:
 			pass
