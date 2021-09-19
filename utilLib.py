@@ -101,9 +101,6 @@ class yaml_parametres():
 			yaml_file = open(self.path, "r")
 		except FileNotFoundError:
 			dict_parameters = {}
-		except Exception as e:
-			print(f"Exception non gérée à la lecture des paramètres : {e}")
-			return
 		else:	
 			dict_parameters = yaml.load(yaml_file, Loader=yaml.FullLoader)
 			yaml_file.close()

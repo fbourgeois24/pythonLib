@@ -1,5 +1,6 @@
 # pythonLib
 
+## Résumé
 Différentes bibliothèques qui failitent l'usage de certaines librairies et de fonctions python telles que
 - sqlite
 - postgresql
@@ -12,3 +13,5 @@ Différentes bibliothèques qui failitent l'usage de certaines librairies et de 
 - enregistrement de paramètres dans un fichier yaml
 - ping
 - récupérer l'ip ou le nom de la machine
+
+
