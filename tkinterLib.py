@@ -3,6 +3,7 @@ from tkinter.messagebox import * # Pour les messages popup
 from tkinter.filedialog import * # Pour la sélection d'un fichier
 from tkinter.ttk import * # Pour la création du tableau
 from tkinter import font
+from pythonLib.utilLib import get_os
 
 
 #################################################################################################################################################################################
@@ -11,7 +12,7 @@ from tkinter import font
 
 
 ''' Barre de défilement'''
-class AutoScrollbar(Scrollbar):
+class auto_scrollbar(Scrollbar):
 	def set(self, lo, hi):
 		if float(lo) <= 0.0 and float(hi) >= 1.0:
 			# grid_remove is currently missing from Tkinter!
@@ -31,14 +32,18 @@ class window:
 	""" Classe pour la gestion des fenêtres"""
 
 
-	def __init__(self, title, size, main = False, scrollbar = False, menu = None, function = None):
-		""" Constructeur qui stocke le titre et la taille de la fenêtre"""
+	def __init__(self, title, size, main = False, scrollbar = False, menu = None, function = None, on_close_function=None):
+		""" Constructeur qui stocke le titre et la taille de la fenêtre
+		function: fonction appelée à lé réouverture de la fenêtre (pour refresh)
+		on_close_function:  Fonction appelée à la fermeture de la fenêtre
+		"""
 		self.title = title
 		self.size = size
-		self.mainWindow = main
-		self.scrollbarActivate = scrollbar
+		self.is_main = main
+		self.scrollbar_activate = scrollbar
 		self.menu = menu
-		self.function = function	
+		self.function = function
+		self.on_close_function = on_close_function 
 
 
 
@@ -56,84 +61,87 @@ class window:
 			else:
 				self.w.title(title)
 			self.w.geometry(self.size)
+
+			# Fonction appelée à la fermeture
+			self.w.protocol("WM_DELETE_WINDOW", self.on_close_function)
+
 			# Affichage du menu
 			if self.menu != None:
-				self.menuBar = Menu(self.w)
+				self.menu_bar = Menu(self.w)
 				
 				# Boucle qui lit le dicttionnaire des menus et qui les génèrent
 				for item in self.menu:	
-					newMenu = Menu(self.menuBar, tearoff=0)
-					self.menuBar.add_cascade(label=item["nom"], menu = newMenu)
-					for subItem1 in item["enfants"]:
-						newMenu2 = Menu(self.menuBar, tearoff=0)
+					new_menu = Menu(self.menu_bar, tearoff=0)
+					self.menu_bar.add_cascade(label=item["nom"], menu = new_menu)
+					for sub_item1 in item["enfants"]:
+						new_menu2 = Menu(self.menu_bar, tearoff=0)
 						try:
 							# on teste si il y a des enfants, si oui c'est un sous menu
-							subItem1["enfants"]
+							sub_item1["enfants"]
 						except:
 							# Elément de menu
-							if subItem1["nom"] == "_":
-								newMenu.add_separator()
+							if sub_item1["nom"] == "_":
+								new_menu.add_separator()
 							else:
-								newMenu.add_command(label=subItem1["nom"], command=subItem1["fonction"])
-								if subItem1["raccourci"] != None:
-									newMenu.bind_all(subItem1["raccourci"], subItem1["fonction"])
+								new_menu.add_command(label=sub_item1["nom"], command=sub_item1["fonction"])
+								if sub_item1["raccourci"] != None:
+									new_menu.bind_all(sub_item1["raccourci"], sub_item1["fonction"])
 						else:
 							# Sous-menu
-							newMenu2 = Menu(newMenu, tearoff=0)
-							newMenu.add_cascade(label=subItem1["nom"], menu = newMenu2)
-							for subItem2 in subItem1["enfants"]:
-								if subItem2["nom"] == "_":
-									newMenu2.add_separator()
+							new_menu2 = Menu(new_menu, tearoff=0)
+							new_menu.add_cascade(label=sub_item1["nom"], menu = new_menu2)
+							for sub_item2 in sub_item1["enfants"]:
+								if sub_item2["nom"] == "_":
+									new_menu2.add_separator()
 								else:
-									newMenu2.add_command(label=subItem2["nom"], command=subItem2["fonction"])
-									if subItem2["raccourci"] != None:
-										newMenu2.bind_all(subItem2["raccourci"], subItem2["fonction"])
+									new_menu2.add_command(label=sub_item2["nom"], command=sub_item2["fonction"])
+									if sub_item2["raccourci"] != None:
+										new_menu2.bind_all(sub_item2["raccourci"], sub_item2["fonction"])
 
-
-				
 				# On attache le menu à la fenêtre principale
-				self.w.config(menu = self.menuBar)
+				self.w.config(menu = self.menu_bar)
+
 			# Affichage de la barre de défilement
-			if self.scrollbarActivate:
-				self.vscrollbar = AutoScrollbar(self.w)
-				self.vscrollbar.grid(row=0, column=1, sticky=N+S, rowspan=3)
-				self.hscrollbar = AutoScrollbar(self.w, orient=HORIZONTAL)
-				self.hscrollbar.grid(row=3, column=0, sticky=E+W)
-				self.upFixFrame = Frame(self.w)
-				self.upFixFrame.grid(row=0, column=0, sticky=E+W)
-				self.canvas = Canvas(self.w, yscrollcommand=self.vscrollbar.set, xscrollcommand=self.hscrollbar.set)
+			if self.scrollbar_activate:
+				self.v_scrollbar = auto_scrollbar(self.w)
+				self.v_scrollbar.grid(row=0, column=1, sticky=N+S, rowspan=3)
+				self.h_scrollbar = auto_scrollbar(self.w, orient=HORIZONTAL)
+				self.h_scrollbar.grid(row=3, column=0, sticky=E+W)
+				self.up_fix_frame = Frame(self.w)
+				self.up_fix_frame.grid(row=0, column=0, sticky=E+W)
+				self.canvas = Canvas(self.w, yscrollcommand=self.v_scrollbar.set, xscrollcommand=self.h_scrollbar.set)
 				self.canvas.grid(row=1, column=0, sticky=N+S+E+W)
-				self.dnFixFrame = Frame(self.w)
-				self.dnFixFrame.grid(row=2, column=0, sticky=E+W)
-				self.vscrollbar.config(command=self.canvas.yview)
-				self.hscrollbar.config(command=self.canvas.xview)
+				self.dn_fix_frame = Frame(self.w)
+				self.dn_fix_frame.grid(row=2, column=0, sticky=E+W)
+				self.v_scrollbar.config(command=self.canvas.yview)
+				self.h_scrollbar.config(command=self.canvas.xview)
 				self.w.grid_rowconfigure(1, weight=1)
 				self.w.grid_columnconfigure(0, weight=1)
-				self.scrlFrame = Frame(self.canvas)
-				self.scrlFrame.rowconfigure(1, weight=1)
-				self.scrlFrame.columnconfigure(1, weight=1)	
+				self.scrl_frame = Frame(self.canvas)
+				self.scrl_frame.rowconfigure(1, weight=1)
+				self.scrl_frame.columnconfigure(1, weight=1)	
 				self.canvas.bind_all("<MouseWheel>", self.onMouseWheel)
 			else:
-				self.upFixFrame = Frame(self.w)
-				self.upFixFrame.pack(fill="both")
-				self.scrlFrame = Frame(self.w)
-				self.scrlFrame.pack(fill="both", expand="yes")
-				self.dnFixFrame = Frame(self.w)
-				self.dnFixFrame.pack(fill="both")
+				self.up_fix_frame = Frame(self.w)
+				self.up_fix_frame.pack(fill="both")
+				self.scrl_frame = Frame(self.w)
+				self.scrl_frame.pack(fill="both", expand="yes")
+				self.dn_fix_frame = Frame(self.w)
+				self.dn_fix_frame.pack(fill="both")
 			return False
 
 	def close(self, ask = False, title = None, message = None):
 		""" Méthode qui ferme la fenêtre"""
 		if title != None or message != None or ask == True:
 			if title != None:
-				boxTitle = title
+				box_title = title
 			else:
-				boxTitle = "Fermer cette fenêtre ?"
+				box_title = "Fermer cette fenêtre ?"
 			if message != None:
-				boxMessage = message
+				box_message = message
 			else:
-				boxMessage = "Êtes vous sur de vouloir fermer cette fenêtre ?"
-			if not askyesno(boxTitle, boxMessage):
+				box_message = "Êtes vous sur de vouloir fermer cette fenêtre ?"
+			if not askyesno(box_title, box_message):
 				return
 		try:
 			self.w.destroy()
@@ -152,20 +160,14 @@ class window:
 		else:
 			self.function(parameter)
 
-	
-	def refresh(self):
-		""" Rafraichir la fenêtre sans la fermer """
-
-
-
 
 	def loop(self):
 		""" Méthode pour que la scrollbar fonctionne, à appeler en fin de fonction"""
-		if self.scrollbarActivate:
-			self.canvas.create_window(0, 0, anchor=NW, window=self.scrlFrame)
-			self.scrlFrame.update_idletasks()
+		if self.scrollbar_activate:
+			self.canvas.create_window(0, 0, anchor=NW, window=self.scrl_frame)
+			self.scrl_frame.update_idletasks()
 			self.canvas.config(scrollregion=self.canvas.bbox("all"))
-		if self.mainWindow:
+		if self.is_main:
 			self.w.mainloop()
 
 
@@ -180,12 +182,14 @@ class window:
 
 	def dataSaved(self):
 		""" Affichage de la fenêtre de sauvegarde réussie """
-		self.dataSavedWindow = Toplevel()
-		self.dataSavedWindow.title("Données sauvegardées")
-		self.dataSavedWindow.geometry("550x50+250+300")
-		Label(self.dataSavedWindow, text="Les données ont bien été sauvegardées", font=("Helvetica, 30")).pack()
-		# self.dataSavedWindow.wx_attributes("-topmost", 1)
-		self.dataSavedWindow.after(1000, self.dataSavedWindow.destroy)
+		self.data_saved_window = Toplevel()
+		self.data_saved_window.title("Données sauvegardées")
+		self.data_saved_window.geometry("550x50+250+300")
+		Label(self.data_saved_window, text="Les données ont bien été sauvegardées", font=("Helvetica, 30")).pack()
+		# self.data_saved_window.wx_attributes("-topmost", 1)
+		self.data_saved_window.after(1000, self.data_saved_window.destroy)
+
+
 
 
 	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None):
@@ -203,6 +207,10 @@ class window:
 		Pour mettre à jour le tableau, il suffit de rappeler la fonction, le précédent sera supprimé
 		"""
 		
+		# Mémorisation des titres et données pour si il faut appliquer un filtre par après
+		titles = titles
+		data = data
+		
 
 		def fixed_map(option):
 		    """ Fonction pour résoudre un bug dans l'affichage des lignes colorées """
@@ -210,10 +218,10 @@ class window:
 		        elm[:2] != ('!disabled', '!selected')]
 
 	
-		def actionSelected(suppr=False, create=False, select=False):
+		def action_selected(suppr=False, create=False, select=False):
 			""" Vérifier si une ligne a bien été sélectionnée si bouton editer ou supprimer """
 			# Si suppr ou create = False on vérifie si une ligne a bien été sélectionnée
-			if (suppr or ((not suppr) and not create)) and tableau.focus() == "":
+			if (suppr or ((not suppr) and not create)) and self.tableau.focus() == "":
 				# Le message est adapté suivant le type d'action (de bouton pressé)
 				if (not suppr) and not select:
 					action = "modifier"
@@ -221,7 +229,7 @@ class window:
 					action = "sélectionner"
 				else:
 					action = "supprimer"
-				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=self.frameTableau)
+				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=self.frame_tableau)
 				return
 	
 			
@@ -246,8 +254,8 @@ class window:
 
 		# Suppression d'un éventuel tableau déjà existant
 		try:
-			self.frameBoutons.destroy()
-			self.frameTableau.destroy()
+			self.frame_boutons.destroy()
+			self.frame_tableau.destroy()
 		except AttributeError:
 			pass
 
@@ -262,97 +270,102 @@ class window:
 
 		
 		# Création d'une frame pour y mettre le tableau
-		self.frameTableau = Frame(self.scrlFrame)
-		self.frameTableau.pack(pady=10, expand=YES, fill=BOTH)
+		self.frame_tableau = Frame(self.scrl_frame)
+		self.frame_tableau.pack(pady=10, expand=YES, fill=BOTH)
 
 		# Création d'une frame pour mettre les boutons au dessus du tableau
-		self.frameBoutons = Frame(self.frameTableau)
-		self.frameBoutons.pack(fill=X)
+		self.frame_boutons = Frame(self.frame_tableau)
+		self.frame_boutons.pack(fill=X)
 
 		# Ajout des boutons, on active seulement les boutons pour lesquels une fonction a été fournie
 		if selectFn != None:
-			Button(self.frameBoutons, text="Sélectionner", command=lambda: actionSelected(select=True)).pack(side=LEFT, padx=10, pady=10)
+			Button(self.frame_boutons, text="Sélectionner", command=lambda: action_selected(select=True)).pack(side=LEFT, padx=10, pady=10)
 		if editFn != None:
 			if ajout:
-				Button(self.frameBoutons, text="Ajouter", command=lambda: actionSelected(create=True)).pack(side=LEFT, padx=10, pady=10)
+				Button(self.frame_boutons, text="Ajouter", command=lambda: action_selected(create=True)).pack(side=LEFT, padx=10, pady=10)
 			if edit:
-				Button(self.frameBoutons, text="Editer", command=lambda: actionSelected(create=False)).pack(side=LEFT, padx=10, pady=10)
+				Button(self.frame_boutons, text="Editer", command=lambda: action_selected(create=False)).pack(side=LEFT, padx=10, pady=10)
 		if supprFn != None:
-			Button(self.frameBoutons, text="Supprimer", command=lambda: actionSelected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
+			Button(self.frame_boutons, text="Supprimer", command=lambda: action_selected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
 
 
 		# Création de la barre de défilement pour le tableau
-		scrollbarYTableau = Scrollbar(self.frameTableau)
-		scrollbarYTableau.pack(side=RIGHT,fill=Y)
-		scrollbarXTableau = Scrollbar(self.frameTableau, orient='horizontal')
-		scrollbarXTableau.pack(side=BOTTOM,fill=X)
+		scrollbar_Y_tableau = Scrollbar(self.frame_tableau)
+		scrollbar_Y_tableau.pack(side=RIGHT,fill=Y)
+		scrollbar_X_tableau = Scrollbar(self.frame_tableau, orient='horizontal')
+		scrollbar_X_tableau.pack(side=BOTTOM,fill=X)
 
 		# Création du tableau et définition des colonnes (le nom de la colonne = le titre de la colonne)
-		tableau = Treeview(self.frameTableau, yscrollcommand=scrollbarYTableau.set, xscrollcommand=scrollbarXTableau.set, selectmode='extended', columns=(titles))
+		self.tableau = Treeview(self.frame_tableau, yscrollcommand=scrollbar_Y_tableau.set, xscrollcommand=scrollbar_X_tableau.set, selectmode='extended', columns=(titles))
 		# Spécification des colonnes
 		for item in titles:
-			tableau.column(item, anchor=CENTER)
-		scrollbarYTableau.config(command=tableau.yview)
-		scrollbarXTableau.config(command=tableau.xview)
+			self.tableau.column(item, anchor=CENTER)
+		scrollbar_Y_tableau.config(command=self.tableau.yview)
+		scrollbar_X_tableau.config(command=self.tableau.xview)
 		
 
 		# Sera utilisé pour mémoriser le tri des colonnes
-		tableau.dict_sort = {}
+		self.tableau.dict_sort = {}
 
 		def fn_sort(column):
 			""" Trier une colonne """
 			# On détecte si le nom de la colonne est le même qu'au tour précédent
-			if tableau.dict_sort.get(column) is not None:
+			if self.tableau.dict_sort.get(column) is not None:
 				# Si c'est le même on inverse juste le sens de tri de la colonne dans le dictionnaire
-				tableau.dict_sort[column] = not tableau.dict_sort[column]
+				self.tableau.dict_sort[column] = not self.tableau.dict_sort[column]
 			else:
 				# Si ce n'est pas la même colonne 
 				# on supprime la flèche de la colonne précédente
 				# On vide le dictionnaire et on ajoute la nouvelle
-				if tableau.dict_sort != {}:
-					tableau.heading(column=tuple(tableau.dict_sort.keys())[0], text=tuple(tableau.dict_sort.keys())[0], strech=NO)
-				tableau.dict_sort.clear()
-				tableau.dict_sort[column] = False
+				if self.tableau.dict_sort != {}:
+					self.tableau.heading(column=tuple(self.tableau.dict_sort.keys())[0], text=tuple(self.tableau.dict_sort.keys())[0])
+				self.tableau.dict_sort.clear()
+				self.tableau.dict_sort[column] = False
 			# Lister les éléments de la colonne
 			try:
-				l = [(float(tableau.set(k, column)), k) for k in tableau.get_children()]
+				l = [(float(self.tableau.set(k, column)), k) for k in self.tableau.get_children()]
 			except ValueError:
-				l = [(tableau.set(k, column), k) for k in tableau.get_children()]
+				l = [(self.tableau.set(k, column), k) for k in self.tableau.get_children()]
 			# Trier les éléments de la colonne
-			l.sort(key=lambda t: t[0], reverse=tableau.dict_sort[column])
+			l.sort(key=lambda t: t[0], reverse=self.tableau.dict_sort[column])
 			# On déplace les lignes dans le tableau
 			for index, (_, k) in enumerate(l):
-				tableau.move(k, '', index)
+				self.tableau.move(k, '', index)
+				if index % 2 == 0:
+					# Si c'est une ligne paire, c'est une ligne blanche
+					self.tableau.item(k, tags=("ligneBlanche",))
+				else:
+					# Si c'est une ligne impaire, c'est une ligne colorée
+					self.tableau.item(k, tags=("ligneCouleur",))
 			# On change le titre pour indiquer le sens de tri
-			if tableau.dict_sort[column]:
-				tableau.heading(column=column, text=column + " ▼")
+			if self.tableau.dict_sort[column]:
+				self.tableau.heading(column=column, text=column + " ▼")
 			else:
-				tableau.heading(column=column, text=column + " ▲")
+				self.tableau.heading(column=column, text=column + " ▲")
 
 
 
 
 		# Attribution du titre à la colonne
 		for title in titles:
-			tableau.heading(column=title, text=title, anchor=CENTER, command=lambda _title = title: fn_sort(_title))
+			self.tableau.heading(column=title, text=title, anchor=CENTER, command=lambda _title = title: fn_sort(_title))
 		# On masque la colonne "text" qui apparait à gauche
-		tableau['show'] = 'headings'
+		self.tableau['show'] = 'headings'
 
-		tableau.pack(pady = (0, 10), expand=YES, fill=BOTH)
+		self.tableau.pack(pady = (0, 10), expand=YES, fill=BOTH)
 
-		
 
-		# On insère dans le tableau toutes les lignes suivantes contenues dans la liste
+		# Coloration d'une ligne sur 2
 		for id, item in enumerate(data):
  			# Si c'est une ligne impaire, on la colorie
 			if id % 2 != 0:
-				tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneCouleur",))
+				self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneCouleur",))
 			else:
-				tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneBlanche",))
+				self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneBlanche",))
 
 		# Configuration des tags pour la coloration d'une ligne sur 2
-		tableau.tag_configure('ligneCouleur', background='lightblue')
-		tableau.tag_configure('ligneBlanche', background='white')
+		self.tableau.tag_configure('ligneCouleur', background='lightblue')
+		self.tableau.tag_configure('ligneBlanche', background='white')
 
 
 		# Autosize des colonnes
@@ -360,15 +373,18 @@ class window:
 		dict_column_size = {}
 		for column in titles:
 			dict_column_size[column] = 0
-			for k in tableau.get_children():
-				taille_element = font.nametofont("TkDefaultFont").measure(tableau.set(k, column))
+			for k in self.tableau.get_children():
+				# Ajout d'un coef pour faire une marge
+				taille_element = font.nametofont("TkDefaultFont").measure(self.tableau.set(k, column)) + 30
 				if taille_element > dict_column_size[column]:
 					dict_column_size[column] = taille_element
+		# On configure la colonne en fonction des valeurs récupérées
 		for column, size in dict_column_size.items():
-			column_size = round(font.nametofont("TkDefaultFont").measure(column) * 1.3)
+			column_size = font.nametofont("TkDefaultFont").measure(column) + 20
+			# Si le titre de la colonne est plus large, on adapte la taille
 			if column_size > size:
 				size = column_size
-			tableau.column(column, width=size, stretch=False)
+			self.tableau.column(column, width=size, stretch=False)
 	
 			
 

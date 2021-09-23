@@ -14,6 +14,9 @@ class postgresqlDatabase:
 	""" Classe pour la gestion de la DB """
 
 	def __init__(self, dbName, dbServer, dbPort="5432", dbUser="postgres", dbPassword = "", GUI=False, sslmode="allow", options = ""):
+		""" sslmode | valeurs possibles: disable, allow, prefer, require, verify-ca, verify-full 
+			options peut servir à chercher dans un schéma particulier : options="-c search_path=dbo,public")
+		"""
 		self.db = None
 		self.cursor = None
 		self.database = dbName
@@ -22,8 +25,8 @@ class postgresqlDatabase:
 		self.user = dbUser
 		self.password = dbPassword
 		self.GUI = GUI
-		self.sslmode = sslmode # Valeurs possibles : disable, allow, prefer, require, verify-ca, verify-full
-		self.options = options # Chercher dans un schéma particulier : options="-c search_path=dbo,public")
+		self.sslmode = sslmode
+		self.options = options
 
 
 	def connect(self):
@@ -78,24 +81,26 @@ class postgresqlDatabase:
 	def exec(self, query, params = None, fetch = "all"):
 		""" Méthode pour exécuter une requête et qui ouvre et ferme  la db automatiquement """
 		# Détermination du commit
-		if not "SELECT" in query[:10]:
+		if not "SELECT" in query[:20]:
 			commit = True
 		else:
 			commit = False
-		self.open()
-		self.cursor.execute(query, params)
-		# Si pas de commit ce sera une récupération
-		if not commit or "RETURNING" in query:	
-			if fetch == "all":
-				value = self.fetchall()
-			elif fetch == "one":
-				value = self.fetchone()
+		if self.open():
+			self.cursor.execute(query, params)
+			# Si pas de commit ce sera une récupération
+			if not commit or "RETURNING" in query:	
+				if fetch == "all":
+					value = self.fetchall()
+				elif fetch == "one":
+					value = self.fetchone()
+				else:
+					raise ValueError("Wrong fetch type")
+				self.close()
+				return value
 			else:
-				raise ValueError("Wrong fetch type")
-			self.close()
-			return value
+				self.close(commit=commit)
 		else:
-			self.close(commit=commit)
+			raise AttributeError("Erreur de création du curseur pour l'accès à la db")
 
 
 	def fetchall(self):
