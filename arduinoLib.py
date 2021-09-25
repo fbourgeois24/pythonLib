@@ -8,6 +8,7 @@
 			si = -1 (on demande la lecture), l'arduino répond avec le type, l'adresse et la valeur à la place de l'état
 """
 
+from os import read
 import serial
 import time
 from datetime import datetime as dt
@@ -15,7 +16,7 @@ from datetime import timedelta
 
 
 class arduino():
-	def __init__(self, port="/dev/ttyACM0", bitrate=9600, auto_connect = False):
+	def __init__(self, port="/dev/ttyACM0", bitrate=115200, auto_connect = False):
 		self.port = port
 		self.bitrate = bitrate
 		if auto_connect:
@@ -32,9 +33,20 @@ class arduino():
 			raise ConnectionError("Erreur de connexion avec l'arduino")
 
 
-	def send_message(self, message = "", verify_response: bool = True, response_timeout = 5) -> bool:
-		""" Envoyer un message à l'arduino """
+	def send_message(self, message = "", response_timeout = 5) -> bool:
+		""" Envoyer un message à l'arduino
+			Dans le cas d'un écriture, renvoie vrai ou faux si la com aboutit ou non
+			Dans le cas d'une lecture, renvoie la valeur lue
+		"""
 
+		# print(f"Message envoyé à l'arduino : {message}")
+		
+		# On détecte si c'est un message de read ou write
+		if message.split(",")[-1] == "-1":
+			message_type = "read"
+		else:
+			message_type = "write"
+		
 		# Envoi du message
 		message += "\r" # Ajout du retour chariot
 		self.arduino.write(message.encode())
@@ -49,10 +61,12 @@ class arduino():
 	
 		# Si l'arduino a renvoyé un message
 		if  self.arduino.inWaiting() > 0: 
-			if verify_response:    
-				answer = self.arduino.readline()
-				self.arduino.flushInput()
-
+			# Lecture et nettoyage de la com
+			answer = self.arduino.readline()
+			self.arduino.flushInput()
+			
+			# Suivant le type écriture ou lecture, on interprête le résultat
+			if message_type == "write":
 				# Si la réponse est = au message initial (message correctement envoyé et sortie activée)
 				if answer == message[:-1].encode():
 					print("Com Arduino OK")
@@ -60,9 +74,29 @@ class arduino():
 				else:
 					print("Com Arduino NOK")
 					return False
-			else:
-				self.arduino.flushInput()
-				return True
+				
+			elif message_type == "read":
+				answer = answer[:-1].decode()
+				# Suivant le type on renvoie un bool ou une valeur
+				if answer.split(",")[0] == "1":
+					# si bool
+					if answer.split(",")[2] == "0":
+						return False
+					elif answer.split(",")[2] == "1":
+						return True
+					else:
+						print(f"Erreur de communication, le message '{answer}' renvoyé par l'aruino est invalide")
+				elif answer.split(",")[0] == "2":
+					try:
+						int(answer.split(",")[2])
+					except ValueError:
+						print(f"Valeur renvoyée par l'arduino incorrecte : {answer}")
+					else:
+						return int(answer.split(",")[2])
+				else:
+					print(f"Erreur de communication, le message '{answer}' renvoyé par l'aruino est invalide")
+
+
 
 
 	def digitalWrite(self, pin: int, value: bool, verify_response: bool = True) -> bool:
@@ -92,7 +126,23 @@ class arduino():
 		return self.send_message("2," + str(pin) + "," + str(value))
 
 
+	def digitalRead(self, pin: int) -> bool:
+		""" Lecture d'une pin TOR sur l'arduino """
+
+		return self.send_message("1," + str(pin) + ",-1")
+
+
 	def analogRead(self, pin: int) -> int:
 		""" Lecture d'une pin analogique sur l'arduino """
-		pass
 
+		return self.send_message("2," + str(pin) + ",-1")
+
+
+	def send_config(self, config: dict) -> bool:
+		""" Envoyer la config des IO à l'arduino 
+			config est un dictionnaire qui contient comme clé le numéro de la pin et comme valeur son type (1 pour entrée, 2 pour sortie et 3 pour input pullup)
+		"""
+
+		for pin, pin_type in config.items():
+			if self.send_message("0," + str(pin) + "," + str(pin_type)) is False:
+				return False
