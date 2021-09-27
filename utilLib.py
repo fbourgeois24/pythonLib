@@ -121,7 +121,7 @@ class yaml_parametres():
 		yaml_file.close()
 
 
-def get_ip(inteface_name):
+def get_ip(inteface_name="eth0"):
 	""" Récupérer l'ip de la carte ethernet de la machine"""
 	return str(os.popen('ifconfig').read().split(inteface_name)[1].split('inet')[1].split('netmask')[0].replace(" ",""))
 
