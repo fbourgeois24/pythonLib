@@ -152,6 +152,10 @@ def supervisor_status():
 	supervisor_status = os.popen("sudo supervisorctl status").read().split("\n")[:-1]
 	for script in supervisor_status:
 		# rstrip permet de supprimer les espaces à la fin de la chaine de caractère
-		dict_scripts[script[:33].rstrip()] = {"status": script[33:43].rstrip(), "pid": script[47:].split(",")[0], "uptime": dt.timedelta(days=int(script[61:].split("day, ")[0]),hours=int(script[61:].split("day,")[1].split(":")[0]) , minutes=int(script[61:].split("day,")[1].split(":")[2]), seconds=int(script[61:].split("day,")[1].split(":")[2]))}
+		try:
+			dict_scripts[script[:33].rstrip()] = {"status": script[33:43].rstrip(), "pid": script[47:].split(",")[0], "uptime": dt.timedelta(days=int(script[61:].split("day, ")[0]),hours=int(script[61:].split("day,")[1].split(":")[0]) , minutes=int(script[61:].split("day,")[1].split(":")[2]), seconds=int(script[61:].split("day,")[1].split(":")[2]))}
+		except ValueError:
+			# Si la lecture échoue c'est que le script ne tourne pas et il n'y a donc pas plus d'infos
+			dict_scripts[script[:33].rstrip()] = {"status": script[33:43].rstrip()}
 		
 	return dict_scripts
