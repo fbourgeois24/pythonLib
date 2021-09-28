@@ -159,3 +159,8 @@ def supervisor_status():
 			dict_scripts[script[:33].rstrip()] = {"status": script[33:43].rstrip()}
 		
 	return dict_scripts
+
+
+def scale(value, from_min, from_max, to_min, to_max):
+	""" Fonction qui fait une mise à l'échelle flottante d'une plage à une autre """
+	return (value - from_min) * (to_max - to_min) / (from_max - from_min) + to_min
