@@ -49,6 +49,7 @@ class arduino():
 		
 		# Envoi du message
 		message += "\r" # Ajout du retour chariot
+		# print(f"Message envoyé à l'arduino : {message}")
 		self.arduino.write(message.encode())
 
 		# On attends que l'arduino renvoie le message
@@ -63,16 +64,17 @@ class arduino():
 		if  self.arduino.inWaiting() > 0: 
 			# Lecture et nettoyage de la com
 			answer = self.arduino.readline()
+			# print(f"Réponse de l'arduino : {answer}")
 			self.arduino.flushInput()
 			
 			# Suivant le type écriture ou lecture, on interprête le résultat
 			if message_type == "write":
 				# Si la réponse est = au message initial (message correctement envoyé et sortie activée)
 				if answer == message[:-1].encode():
-					print("Com Arduino OK")
+					# print("Com Arduino OK")
 					return True
 				else:
-					print("Com Arduino NOK")
+					# print("Com Arduino NOK")
 					return False
 				
 			elif message_type == "read":
@@ -99,17 +101,28 @@ class arduino():
 
 
 
-	def digitalWrite(self, pin: int, value: bool, verify_response: bool = True) -> bool:
+	def digitalWrite(self, pin: int, value: bool, verify_response: bool = True, active_low=False) -> bool:
 		""" Ecriture d'une sortie TOR sur l'arduino """
 		
 		# Constitution et envoi du message
-		if value:
-			etat = 1
+		# Inversion de l'état si sortie active bas
+		if not active_low:
+			if value:
+				etat = 1
+			else:
+				etat = 0
+			self.pin_state[pin] = value
 		else:
-			etat = 0
+			if value:
+				etat = 0
+				self.pin_state[pin] = 1
+			else:
+				etat = 1
+				self.pin_state[pin] = 0
+			
 
 		# Update du status de la pin
-		self.pin_state[pin] = value
+		
 
 		return self.send_message("1," + str(pin) + "," + str(etat))
 		
@@ -140,9 +153,16 @@ class arduino():
 
 	def send_config(self, config: dict) -> bool:
 		""" Envoyer la config des IO à l'arduino 
-			config est un dictionnaire qui contient comme clé le numéro de la pin et comme valeur son type (1 pour entrée, 2 pour sortie et 3 pour input pullup)
+			config est un dictionnaire qui contient comme clé le numéro de la pin et comme valeur son type (0 pour sortie actif bas, 1 pour sortie, ? pour entrée et ? pour input pullup)
+			Si pin type est à zéro on envoie un 4e param qui correspond à l'activation de l'inversion de la sortie 
 		"""
 
 		for pin, pin_type in config.items():
-			if self.send_message("0," + str(pin) + "," + str(pin_type)) is False:
-				return False
+			if pin_type == 0:
+				if self.send_message("0," + str(pin) + ",1,1") is False:
+					return False
+			elif pin_type == 1:
+				if self.send_message("0," + str(pin) + ",1,0") is False:
+					return False
+
+		return True
