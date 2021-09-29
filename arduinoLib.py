@@ -21,7 +21,7 @@ class arduino():
 		self.bitrate = bitrate
 		if auto_connect:
 			self.connect()
-		self.pin_state = [False for i in range(55)]
+		self.pin_state = [0 for i in range(55)]
 
 
 	def connect(self):
@@ -49,7 +49,7 @@ class arduino():
 		
 		# Envoi du message
 		message += "\r" # Ajout du retour chariot
-		print(f"Message envoyé à l'arduino : {message}")
+		# print(f"Message envoyé à l'arduino : {message}")
 		self.arduino.write(message.encode())
 
 		# On attends que l'arduino renvoie le message
@@ -64,7 +64,7 @@ class arduino():
 		if  self.arduino.inWaiting() > 0: 
 			# Lecture et nettoyage de la com
 			answer = self.arduino.readline()
-			print(f"Réponse de l'arduino : {answer}")
+			# print(f"Réponse de l'arduino : {answer}")
 			self.arduino.flushInput()
 			
 			# Suivant le type écriture ou lecture, on interprête le résultat
@@ -111,7 +111,7 @@ class arduino():
 				etat = 1
 			else:
 				etat = 0
-			self.pin_state[pin] = value
+			self.pin_state[pin] = etat
 		else:
 			if value:
 				etat = 0
