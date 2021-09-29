@@ -49,7 +49,7 @@ class arduino():
 		
 		# Envoi du message
 		message += "\r" # Ajout du retour chariot
-		# print(f"Message envoyé à l'arduino : {message}")
+		print(f"Message envoyé à l'arduino : {message}")
 		self.arduino.write(message.encode())
 
 		# On attends que l'arduino renvoie le message
@@ -64,7 +64,7 @@ class arduino():
 		if  self.arduino.inWaiting() > 0: 
 			# Lecture et nettoyage de la com
 			answer = self.arduino.readline()
-			# print(f"Réponse de l'arduino : {answer}")
+			print(f"Réponse de l'arduino : {answer}")
 			self.arduino.flushInput()
 			
 			# Suivant le type écriture ou lecture, on interprête le résultat
@@ -153,16 +153,17 @@ class arduino():
 
 	def send_config(self, config: dict) -> bool:
 		""" Envoyer la config des IO à l'arduino 
-			config est un dictionnaire qui contient comme clé le numéro de la pin et comme valeur son type (0 pour sortie actif bas, 1 pour sortie, ? pour entrée et ? pour input pullup)
-			Si pin type est à zéro on envoie un 4e param qui correspond à l'activation de l'inversion de la sortie 
+			config est un dictionnaire qui contient comme clé le numéro de la pin et comme valeur son type 
+			Liste de types : 
+			- 0 -> entrée 
+			- 1 -> sortie actif haut
+			- 2 -> entrée pullup
+			- 3 -> sortie actif bas
+			- 5 -> DS18#20
 		"""
 
 		for pin, pin_type in config.items():
-			if pin_type == 0:
-				if self.send_message("0," + str(pin) + ",1,1") is False:
-					return False
-			elif pin_type == 1:
-				if self.send_message("0," + str(pin) + ",1,0") is False:
+			if self.send_message("0," + str(pin) + "," + str(pin_type)) is False:
 					return False
 
 		return True
