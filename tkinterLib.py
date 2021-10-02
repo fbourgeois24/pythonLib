@@ -192,17 +192,17 @@ class window:
 
 
 
-	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None):
+	def show_as_table(self,titles,data,select_fn=None,ajout=True, edit=True,edit_fn=None,suppr_fn=None):
 		""" Méthode pour afficher une liste comme tableau
 		La scrollbar de la fenêtre doit être désactivée
 		titles est une liste qui contient les titres des colonnes
 		data contient les infos à afficher (liste sur 2 niveaux pour lignes et colonnes)
 			Dans les colonnes, la permière ne sera pas affichée et servira de valeur renvoyée à la sélection d'une ligne
-		selectFn : Fonction appelée par le bouton "Sélectionner". Appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
-		editFn : Fonction déclenchée par le bouton "Ajout" ou "Modification" appelle la fonction passée avec les paramètres 
+		select_fn : Fonction appelée par le bouton "Sélectionner". Appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
+		edit_fn : Fonction déclenchée par le bouton "Ajout" ou "Modification" appelle la fonction passée avec les paramètres 
 			- id=0 et create=True si ajout (paramètre ajout=True)
 			- id=id de la ligne sélectionnée et create = False si modification(paramètre edit=True)
-		supprFn : Fonction déclenchée par le bouton "Supprimer", appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
+		suppr_fn : Fonction déclenchée par le bouton "Supprimer", appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
 
 		Pour mettre à jour le tableau, il suffit de rappeler la fonction, le précédent sera supprimé
 		"""
@@ -213,9 +213,9 @@ class window:
 		
 
 		def fixed_map(option):
-		    """ Fonction pour résoudre un bug dans l'affichage des lignes colorées """
-		    return [elm for elm in style.map('Treeview', query_opt=option) if
-		        elm[:2] != ('!disabled', '!selected')]
+			""" Fonction pour résoudre un bug dans l'affichage des lignes colorées """
+			return [elm for elm in style.map('Treeview', query_opt=option) if
+				elm[:2] != ('!disabled', '!selected')]
 
 	
 		def action_selected(suppr=False, create=False, select=False):
@@ -235,16 +235,16 @@ class window:
 			
 			# Si sélection
 			if select:
-				selectFn(id=tableau.focus())
+				select_fn(id=self.tableau.focus())
 			# Si suppression
 			elif suppr:
-				supprFn(id=tableau.focus())
+				suppr_fn(id=self.tableau.focus())
 			# Si création
 			elif create:
-				editFn(id=0, create=True)
+				edit_fn(id=0, create=True)
 			# Sinon modification
 			else:
-				editFn(id=tableau.focus(), create=False)
+				edit_fn(id=self.tableau.focus(), create=False)
 
 
 		# Vérification si des infos à afficher ont bien été transmises
@@ -256,7 +256,7 @@ class window:
 		try:
 			self.frame_boutons.destroy()
 			self.frame_tableau.destroy()
-		except AttributeError:
+		except:
 			pass
 
 
@@ -278,14 +278,14 @@ class window:
 		self.frame_boutons.pack(fill=X)
 
 		# Ajout des boutons, on active seulement les boutons pour lesquels une fonction a été fournie
-		if selectFn != None:
+		if select_fn != None:
 			Button(self.frame_boutons, text="Sélectionner", command=lambda: action_selected(select=True)).pack(side=LEFT, padx=10, pady=10)
-		if editFn != None:
+		if edit_fn != None:
 			if ajout:
 				Button(self.frame_boutons, text="Ajouter", command=lambda: action_selected(create=True)).pack(side=LEFT, padx=10, pady=10)
 			if edit:
 				Button(self.frame_boutons, text="Editer", command=lambda: action_selected(create=False)).pack(side=LEFT, padx=10, pady=10)
-		if supprFn != None:
+		if suppr_fn != None:
 			Button(self.frame_boutons, text="Supprimer", command=lambda: action_selected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
 
 
@@ -333,10 +333,10 @@ class window:
 				self.tableau.move(k, '', index)
 				if index % 2 == 0:
 					# Si c'est une ligne paire, c'est une ligne blanche
-					self.tableau.item(k, tags=("ligneBlanche",))
+					self.tableau.item(k, tags=("ligne_blanche",))
 				else:
 					# Si c'est une ligne impaire, c'est une ligne colorée
-					self.tableau.item(k, tags=("ligneCouleur",))
+					self.tableau.item(k, tags=("ligne_couleur",))
 			# On change le titre pour indiquer le sens de tri
 			if self.tableau.dict_sort[column]:
 				self.tableau.heading(column=column, text=column + " ▼")
@@ -355,17 +355,32 @@ class window:
 		self.tableau.pack(pady = (0, 10), expand=YES, fill=BOTH)
 
 
-		# Coloration d'une ligne sur 2
+		# Remplissage du tableau
 		for id, item in enumerate(data):
- 			# Si c'est une ligne impaire, on la colorie
-			if id % 2 != 0:
-				self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneCouleur",))
-			else:
-				self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneBlanche",))
+			# Si le premier élément de la liste n'est pas une liste, c'est une simple ligne
+			if type(item[0]) is not list:
+				# Si c'est une ligne impaire, on la colorie
+				if id % 2 != 0:
+					self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligne_couleur",))
+				else:
+					self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligne_blanche",))
+			if type(item[0]) is list:
+				# Si le premier élément de la liste est une liste, c'est une ligne avec des enfants
+				# La première ligne sera le parent
+				self.tableau.insert(parent='', index='end', iid=id, values=item[0])
+				# Les lignes suivantes seront les enfants
+				for subid, subitem in enumerate(item[1:]):
+					if subid % 2 != 0:
+						self.tableau.insert(parent=id, index='end', iid=id*1000+subid, values=["    " + str(i) for i in subitem], tags=("sous_ligne_couleur",))
+					else:
+						self.tableau.insert(parent=id, index='end', iid=id*1000+subid, values=["    " + str(i) for i in subitem], tags=("sous_ligne_blanche",))
+
 
 		# Configuration des tags pour la coloration d'une ligne sur 2
-		self.tableau.tag_configure('ligneCouleur', background='lightblue')
-		self.tableau.tag_configure('ligneBlanche', background='white')
+		self.tableau.tag_configure('ligne_couleur', background='lightblue')
+		self.tableau.tag_configure('ligne_blanche', background='white')
+		self.tableau.tag_configure('sous_ligne_couleur', background='lightgrey')
+		self.tableau.tag_configure('sous_ligne_blanche', background='white')
 
 
 		# Autosize des colonnes
