@@ -192,7 +192,7 @@ class window:
 
 
 
-	def show_as_table(self,titles,data,select_fn=None,ajout=True, edit=True,edit_fn=None,suppr_fn=None):
+	def show_as_table(self,titles,data,select_fn=None,ajout=True, edit=True,edit_fn=None,suppr_fn=None, center_items=True, select_child=True, unfold_by_default=False):
 		""" Méthode pour afficher une liste comme tableau
 		La scrollbar de la fenêtre doit être désactivée
 		titles est une liste qui contient les titres des colonnes
@@ -203,10 +203,17 @@ class window:
 			- id=0 et create=True si ajout (paramètre ajout=True)
 			- id=id de la ligne sélectionnée et create = False si modification(paramètre edit=True)
 		suppr_fn : Fonction déclenchée par le bouton "Supprimer", appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
+		center_items : Permet de centrer ou non les éléments dans les colonnes
+		select_child : Définit si une ligne enfant peut-être sélectionnée
+		unfold_by_default : Définit dans le cas de lignes enfant si les lignes parent doivent être dépliées par défaut ou non
 
 		Pour mettre à jour le tableau, il suffit de rappeler la fonction, le précédent sera supprimé
 		"""
 		
+		if self.scrollbar_activate is True:
+			raise AttributeError("La scrollbar de la fenêtre doit être désactivée pour un résultat correct")
+
+
 		# Mémorisation des titres et données pour si il faut appliquer un filtre par après
 		titles = titles
 		data = data
@@ -232,19 +239,24 @@ class window:
 				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=self.frame_tableau)
 				return
 	
-			
+			# On récupère l'id et s'il est plus grand que 100000 c'est que c'est une ligne enfant qui est sélectionnée, on en déduit l'id du parent
+			if self.tableau.focus() != "":
+				id = int(self.tableau.focus())
+				if id >= 100000:
+					id = int(id / 100000)
+
 			# Si sélection
 			if select:
-				select_fn(id=self.tableau.focus())
+				select_fn(id=id)
 			# Si suppression
 			elif suppr:
-				suppr_fn(id=self.tableau.focus())
+				suppr_fn(id=id)
 			# Si création
 			elif create:
 				edit_fn(id=0, create=True)
 			# Sinon modification
 			else:
-				edit_fn(id=self.tableau.focus(), create=False)
+				edit_fn(id=id, create=False)
 
 
 		# Vérification si des infos à afficher ont bien été transmises
@@ -299,7 +311,11 @@ class window:
 		self.tableau = Treeview(self.frame_tableau, yscrollcommand=scrollbar_Y_tableau.set, xscrollcommand=scrollbar_X_tableau.set, selectmode='extended', columns=(titles))
 		# Spécification des colonnes
 		for item in titles:
-			self.tableau.column(item, anchor=CENTER)
+			if center_items == True:
+				anchor = 'center'
+			else:
+				anchor = 'w'
+			self.tableau.column(item, anchor=anchor)
 		scrollbar_Y_tableau.config(command=self.tableau.yview)
 		scrollbar_X_tableau.config(command=self.tableau.xview)
 		
@@ -348,7 +364,7 @@ class window:
 
 		# Attribution du titre à la colonne
 		for title in titles:
-			self.tableau.heading(column=title, text=title, anchor=CENTER, command=lambda _title = title: fn_sort(_title))
+			self.tableau.heading(column=title, text=title, anchor='center', command=lambda _title = title: fn_sort(_title))
 		# On masque la colonne "text" qui apparait à gauche
 		self.tableau['show'] = 'headings'
 
@@ -367,13 +383,16 @@ class window:
 			if type(item[0]) is list:
 				# Si le premier élément de la liste est une liste, c'est une ligne avec des enfants
 				# La première ligne sera le parent
-				self.tableau.insert(parent='', index='end', iid=id, values=item[0])
+				if id % 2 != 0:
+					self.tableau.insert('', 'end', iid=item[0][0], values=item[0][1:], tags=("ligne_couleur",), open=unfold_by_default)
+				else:
+					self.tableau.insert('', 'end', iid=item[0][0], values=item[0][1:], tags=("ligne_blanche",), open=unfold_by_default)
 				# Les lignes suivantes seront les enfants
 				for subid, subitem in enumerate(item[1:]):
-					if subid % 2 != 0:
-						self.tableau.insert(parent=id, index='end', iid=id*1000+subid, values=["    " + str(i) for i in subitem], tags=("sous_ligne_couleur",))
+					if subid % 2 == 0:
+						self.tableau.insert(parent=item[0][0], index='end', iid=item[0][0]*100000+subid, values=["    " + str(i) for i in subitem[1:]], tags=("sous_ligne_couleur",))
 					else:
-						self.tableau.insert(parent=id, index='end', iid=id*1000+subid, values=["    " + str(i) for i in subitem], tags=("sous_ligne_blanche",))
+						self.tableau.insert(parent=item[0][0], index='end', iid=item[0][0]*100000+subid, values=["    " + str(i) for i in subitem[1:]], tags=("sous_ligne_blanche",))
 
 
 		# Configuration des tags pour la coloration d'une ligne sur 2
@@ -400,6 +419,9 @@ class window:
 			if column_size > size:
 				size = column_size
 			self.tableau.column(column, width=size, stretch=False)
+
+		# Sélection simple ligne
+		self.tableau['selectmode'] = "browse"
 	
 			
 
