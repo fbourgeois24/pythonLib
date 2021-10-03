@@ -47,9 +47,14 @@ class window:
 
 
 
-	def open(self, title=None):
+	def open(self, title=None, function_on_return=None, on_close_function=None):
 		""" Méthode qui ouvre la fenêtre ou la fait passer au premier plan si elle est déjà ouverte
-		Elle peut afficher un menu ou une barre de défilement sur la fenêtre"""
+		Elle peut afficher un menu ou une barre de défilement sur la fenêtre
+		function_on_return : fonction appelée quand la touche enter est pressée
+		on_close_function : fonction appelée à la fermeture de la fenêtre
+		"""
+		if on_close_function is not None:
+			self.on_close_function = on_close_function
 		try:
 			self.w.focus_force()
 			self.w.lift()
@@ -62,8 +67,11 @@ class window:
 				self.w.title(title)
 			self.w.geometry(self.size)
 
-			# Fonction appelée à la fermeture
-			self.w.protocol("WM_DELETE_WINDOW", self.on_close_function)
+			if self.on_close_function is not None:	# Fonction appelée à la fermeture
+				def close_function():
+					self.on_close_function()
+					self.w.destroy()
+				self.w.protocol("WM_DELETE_WINDOW", close_function)
 
 			# Affichage du menu
 			if self.menu != None:
@@ -128,6 +136,13 @@ class window:
 				self.scrl_frame.pack(fill="both", expand="yes")
 				self.dn_fix_frame = Frame(self.w)
 				self.dn_fix_frame.pack(fill="both")
+
+			if function_on_return is not None:	
+				def return_key_pressed(event):
+					function_on_return()
+				self.w.bind("<Return>", return_key_pressed)
+
+
 			return False
 
 	def close(self, ask = False, title = None, message = None):
