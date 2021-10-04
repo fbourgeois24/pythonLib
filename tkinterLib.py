@@ -47,9 +47,14 @@ class window:
 
 
 
-	def open(self, title=None):
+	def open(self, title=None, function_on_return=None, on_close_function=None):
 		""" Méthode qui ouvre la fenêtre ou la fait passer au premier plan si elle est déjà ouverte
-		Elle peut afficher un menu ou une barre de défilement sur la fenêtre"""
+		Elle peut afficher un menu ou une barre de défilement sur la fenêtre
+		function_on_return : fonction appelée quand la touche enter est pressée
+		on_close_function : fonction appelée à la fermeture de la fenêtre
+		"""
+		if on_close_function is not None:
+			self.on_close_function = on_close_function
 		try:
 			self.w.focus_force()
 			self.w.lift()
@@ -62,8 +67,11 @@ class window:
 				self.w.title(title)
 			self.w.geometry(self.size)
 
-			# Fonction appelée à la fermeture
-			self.w.protocol("WM_DELETE_WINDOW", self.on_close_function)
+			if self.on_close_function is not None:	# Fonction appelée à la fermeture
+				def close_function():
+					self.on_close_function()
+					self.w.destroy()
+				self.w.protocol("WM_DELETE_WINDOW", close_function)
 
 			# Affichage du menu
 			if self.menu != None:
@@ -128,6 +136,13 @@ class window:
 				self.scrl_frame.pack(fill="both", expand="yes")
 				self.dn_fix_frame = Frame(self.w)
 				self.dn_fix_frame.pack(fill="both")
+
+			if function_on_return is not None:	
+				def return_key_pressed(event):
+					function_on_return()
+				self.w.bind("<Return>", return_key_pressed)
+
+
 			return False
 
 	def close(self, ask = False, title = None, message = None):
@@ -192,30 +207,37 @@ class window:
 
 
 
-	def showAsTable(self,titles,data,selectFn=None,ajout=True, edit=True,editFn=None,supprFn=None):
+	def show_as_table(self,titles,data,select_fn=None,ajout=True, edit=True,edit_fn=None,suppr_fn=None, center_items=True, select_child=True, unfold_by_default=False):
 		""" Méthode pour afficher une liste comme tableau
 		La scrollbar de la fenêtre doit être désactivée
 		titles est une liste qui contient les titres des colonnes
 		data contient les infos à afficher (liste sur 2 niveaux pour lignes et colonnes)
 			Dans les colonnes, la permière ne sera pas affichée et servira de valeur renvoyée à la sélection d'une ligne
-		selectFn : Fonction appelée par le bouton "Sélectionner". Appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
-		editFn : Fonction déclenchée par le bouton "Ajout" ou "Modification" appelle la fonction passée avec les paramètres 
+		select_fn : Fonction appelée par le bouton "Sélectionner". Appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
+		edit_fn : Fonction déclenchée par le bouton "Ajout" ou "Modification" appelle la fonction passée avec les paramètres 
 			- id=0 et create=True si ajout (paramètre ajout=True)
 			- id=id de la ligne sélectionnée et create = False si modification(paramètre edit=True)
-		supprFn : Fonction déclenchée par le bouton "Supprimer", appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
+		suppr_fn : Fonction déclenchée par le bouton "Supprimer", appelle la fonction passée avec le paramètre id=id de la ligne sélectionnée
+		center_items : Permet de centrer ou non les éléments dans les colonnes
+		select_child : Définit si une ligne enfant peut-être sélectionnée
+		unfold_by_default : Définit dans le cas de lignes enfant si les lignes parent doivent être dépliées par défaut ou non
 
 		Pour mettre à jour le tableau, il suffit de rappeler la fonction, le précédent sera supprimé
 		"""
 		
+		if self.scrollbar_activate is True:
+			raise AttributeError("La scrollbar de la fenêtre doit être désactivée pour un résultat correct")
+
+
 		# Mémorisation des titres et données pour si il faut appliquer un filtre par après
 		titles = titles
 		data = data
 		
 
 		def fixed_map(option):
-		    """ Fonction pour résoudre un bug dans l'affichage des lignes colorées """
-		    return [elm for elm in style.map('Treeview', query_opt=option) if
-		        elm[:2] != ('!disabled', '!selected')]
+			""" Fonction pour résoudre un bug dans l'affichage des lignes colorées """
+			return [elm for elm in style.map('Treeview', query_opt=option) if
+				elm[:2] != ('!disabled', '!selected')]
 
 	
 		def action_selected(suppr=False, create=False, select=False):
@@ -232,19 +254,24 @@ class window:
 				showwarning("Pas de ligne sélectionnée","Aucune ligne n'a été sélectionnée, veuillez sélectionner une ligne pour pouvoir la " + action, master=self.frame_tableau)
 				return
 	
-			
+			# On récupère l'id et s'il est plus grand que 100000 c'est que c'est une ligne enfant qui est sélectionnée, on en déduit l'id du parent
+			if self.tableau.focus() != "":
+				id = int(self.tableau.focus())
+				if id >= 100000:
+					id = int(id / 100000)
+
 			# Si sélection
 			if select:
-				selectFn(id=tableau.focus())
+				select_fn(id=id)
 			# Si suppression
 			elif suppr:
-				supprFn(id=tableau.focus())
+				suppr_fn(id=id)
 			# Si création
 			elif create:
-				editFn(id=0, create=True)
+				edit_fn(id=0, create=True)
 			# Sinon modification
 			else:
-				editFn(id=tableau.focus(), create=False)
+				edit_fn(id=id, create=False)
 
 
 		# Vérification si des infos à afficher ont bien été transmises
@@ -256,7 +283,7 @@ class window:
 		try:
 			self.frame_boutons.destroy()
 			self.frame_tableau.destroy()
-		except AttributeError:
+		except:
 			pass
 
 
@@ -278,14 +305,14 @@ class window:
 		self.frame_boutons.pack(fill=X)
 
 		# Ajout des boutons, on active seulement les boutons pour lesquels une fonction a été fournie
-		if selectFn != None:
+		if select_fn != None:
 			Button(self.frame_boutons, text="Sélectionner", command=lambda: action_selected(select=True)).pack(side=LEFT, padx=10, pady=10)
-		if editFn != None:
+		if edit_fn != None:
 			if ajout:
 				Button(self.frame_boutons, text="Ajouter", command=lambda: action_selected(create=True)).pack(side=LEFT, padx=10, pady=10)
 			if edit:
 				Button(self.frame_boutons, text="Editer", command=lambda: action_selected(create=False)).pack(side=LEFT, padx=10, pady=10)
-		if supprFn != None:
+		if suppr_fn != None:
 			Button(self.frame_boutons, text="Supprimer", command=lambda: action_selected(suppr=True)).pack(side=LEFT, padx=10, pady=10)
 
 
@@ -299,7 +326,11 @@ class window:
 		self.tableau = Treeview(self.frame_tableau, yscrollcommand=scrollbar_Y_tableau.set, xscrollcommand=scrollbar_X_tableau.set, selectmode='extended', columns=(titles))
 		# Spécification des colonnes
 		for item in titles:
-			self.tableau.column(item, anchor=CENTER)
+			if center_items == True:
+				anchor = 'center'
+			else:
+				anchor = 'w'
+			self.tableau.column(item, anchor=anchor)
 		scrollbar_Y_tableau.config(command=self.tableau.yview)
 		scrollbar_X_tableau.config(command=self.tableau.xview)
 		
@@ -333,10 +364,10 @@ class window:
 				self.tableau.move(k, '', index)
 				if index % 2 == 0:
 					# Si c'est une ligne paire, c'est une ligne blanche
-					self.tableau.item(k, tags=("ligneBlanche",))
+					self.tableau.item(k, tags=("ligne_blanche",))
 				else:
 					# Si c'est une ligne impaire, c'est une ligne colorée
-					self.tableau.item(k, tags=("ligneCouleur",))
+					self.tableau.item(k, tags=("ligne_couleur",))
 			# On change le titre pour indiquer le sens de tri
 			if self.tableau.dict_sort[column]:
 				self.tableau.heading(column=column, text=column + " ▼")
@@ -348,24 +379,42 @@ class window:
 
 		# Attribution du titre à la colonne
 		for title in titles:
-			self.tableau.heading(column=title, text=title, anchor=CENTER, command=lambda _title = title: fn_sort(_title))
+			self.tableau.heading(column=title, text=title, anchor='center', command=lambda _title = title: fn_sort(_title))
 		# On masque la colonne "text" qui apparait à gauche
 		self.tableau['show'] = 'headings'
 
 		self.tableau.pack(pady = (0, 10), expand=YES, fill=BOTH)
 
 
-		# Coloration d'une ligne sur 2
+		# Remplissage du tableau
 		for id, item in enumerate(data):
- 			# Si c'est une ligne impaire, on la colorie
-			if id % 2 != 0:
-				self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneCouleur",))
-			else:
-				self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligneBlanche",))
+			# Si le premier élément de la liste n'est pas une liste, c'est une simple ligne
+			if type(item[0]) is not list:
+				# Si c'est une ligne impaire, on la colorie
+				if id % 2 != 0:
+					self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligne_couleur",))
+				else:
+					self.tableau.insert('', 'end', iid=item[0], values=(item[1:]), tags=("ligne_blanche",))
+			if type(item[0]) is list:
+				# Si le premier élément de la liste est une liste, c'est une ligne avec des enfants
+				# La première ligne sera le parent
+				if id % 2 != 0:
+					self.tableau.insert('', 'end', iid=item[0][0], values=item[0][1:], tags=("ligne_couleur",), open=unfold_by_default)
+				else:
+					self.tableau.insert('', 'end', iid=item[0][0], values=item[0][1:], tags=("ligne_blanche",), open=unfold_by_default)
+				# Les lignes suivantes seront les enfants
+				for subid, subitem in enumerate(item[1:]):
+					if subid % 2 == 0:
+						self.tableau.insert(parent=item[0][0], index='end', iid=item[0][0]*100000+subid, values=["    " + str(i) for i in subitem[1:]], tags=("sous_ligne_couleur",))
+					else:
+						self.tableau.insert(parent=item[0][0], index='end', iid=item[0][0]*100000+subid, values=["    " + str(i) for i in subitem[1:]], tags=("sous_ligne_blanche",))
+
 
 		# Configuration des tags pour la coloration d'une ligne sur 2
-		self.tableau.tag_configure('ligneCouleur', background='lightblue')
-		self.tableau.tag_configure('ligneBlanche', background='white')
+		self.tableau.tag_configure('ligne_couleur', background='lightblue')
+		self.tableau.tag_configure('ligne_blanche', background='white')
+		self.tableau.tag_configure('sous_ligne_couleur', background='lightgrey')
+		self.tableau.tag_configure('sous_ligne_blanche', background='white')
 
 
 		# Autosize des colonnes
@@ -385,6 +434,9 @@ class window:
 			if column_size > size:
 				size = column_size
 			self.tableau.column(column, width=size, stretch=False)
+
+		# Sélection simple ligne
+		self.tableau['selectmode'] = "browse"
 	
 			
 
