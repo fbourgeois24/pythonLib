@@ -1,4 +1,5 @@
 import os, sys
+import traceback
 
 try:
 	import sqlite3
@@ -45,11 +46,8 @@ class sqliteDatabase:
 					if e == "database is locked":
 						time.sleep(0.2)
 					else:
-						print(e)
+						print(traceback.format_exc())
 						return False
-				except Exception as e:
-					print(e)
-					return False
 
 		else:
 			if self.GUI == 'tkinter':
@@ -101,10 +99,6 @@ class sqliteDatabase:
 				else:
 					print(e)
 					return False
-			except Exception as e:
-				print(e)
-				return False
-			
 
 	def exec(self,query, fetch = "all", returnFormat='list'):
 		""" Méthode pour exécuter un requête et qui gère l'ouverture et la fermeture de la db automatiquement """
