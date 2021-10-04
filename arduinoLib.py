@@ -95,6 +95,13 @@ class arduino():
 						print(f"Valeur renvoyée par l'arduino incorrecte : {answer}")
 					else:
 						return int(answer.split(",")[2])
+				elif answer.split(",")[0] == "5":
+					try:
+						float(answer.split(",")[2])
+					except ValueError:
+						print(f"Valeur renvoyée par l'arduino incorrecte : {answer}")
+					else:
+						return float(answer.split(",")[2])
 				else:
 					print(f"Erreur de communication, le message '{answer}' renvoyé par l'aruino est invalide")
 
